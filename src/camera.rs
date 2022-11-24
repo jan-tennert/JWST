@@ -2,12 +2,15 @@ use bevy::{
     input::mouse::{MouseMotion, MouseWheel},
     prelude::{
         Component, EventReader, Input, Mat3, MouseButton, Projection, Quat, Query, Res, Transform,
-        Vec2, Vec3,
+        Vec2, Vec3, App,
+        Plugin
     },
     window::Windows,
 };
+use bevy_inspector_egui::{Inspectable, RegisterInspectable};
+
 /// Tags an entity as capable of panning and orbiting.
-#[derive(Component)]
+#[derive(Component, Inspectable)]
 pub struct PanOrbitCamera {
     /// The "focus point" to orbit around. It is automatically updated when panning the camera
     pub focus: Vec3,
@@ -33,6 +36,16 @@ impl PanOrbitCamera {
         self.focus = focus
     }
 }
+
+pub struct PanOrbitCameraPlugin;
+
+impl Plugin for PanOrbitCameraPlugin {
+    fn build(&self, app: &mut App) {
+        app
+        .register_inspectable::<PanOrbitCamera>()
+        .add_system(pan_orbit_camera);
+    }  
+} 
 
 /// Pan the camera with middle mouse click, zoom with scroll wheel, orbit with right mouse click.
 pub fn pan_orbit_camera(

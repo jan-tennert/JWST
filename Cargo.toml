@@ -15,4 +15,4 @@ opt-level = 3
 bevy = "0.9"
 bevy-inspector-egui = "0.14.0"
 bevy_mod_picking = "0.10"
-#smooth-bevy-cameras = { version = "0.6.0", git = "https://github.com/bonsairobo/smooth-bevy-cameras" }
+#bevy_atmosphere = { git = "https://github.com/JonahPlusPlus/bevy_atmosphere" }
