@@ -88,11 +88,11 @@ impl Plugin for BodyPlugin {
     }
 }
 
-/// Newton's law of universal gravitation
+/// 
 /// ```
 /// F = G*m1*m2/r^2
 /// ```
-/// where:
+/// 
 /// - `F` is the gravitational force acting between two objects
 /// - `G` is the gravitational constant
 /// - `m1` and `m2` are the masses of the objects
@@ -113,7 +113,7 @@ pub fn update_acceleration(g: Res<Gravity>, mut query: Query<(&Mass, &Transform,
         bodies.push((mass, transform, acc));
     }
 
-    // Newton's second law of motion: `F = ma => a = F/m`
+    //`F = ma => a = F/m`
     for (mass, _, acc) in bodies.iter_mut() {
         acc.0 /= mass.0;
     }
