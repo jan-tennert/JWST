@@ -67,7 +67,7 @@ fn setup(
         .with_children(|commands| {
             commands.spawn(SceneBundle {
                 scene: sun,
-                transform: Transform::from_scale(Vec3::new(0.002, 0.002, 0.002)),
+                transform: Transform::from_scale(Vec3::new(0.001, 0.001, 0.001)),
                 ..Default::default()
             });
         });
@@ -91,7 +91,7 @@ fn setup(
         .with_children(|commands| {
             commands.spawn(SceneBundle {
                 scene: earth,
-                transform: Transform::from_scale(Vec3::new(0.0005, 0.0005, 0.0005)),
+                transform: Transform::from_scale(Vec3::new(0.0002, 0.0002, 0.0002)),
                 ..Default::default()
             });
         });
