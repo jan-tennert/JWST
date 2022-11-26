@@ -1,7 +1,13 @@
-use bevy::prelude::{Query, Transform, Name, Component, Vec3, Bundle, Res, Mut, Resource, App, Plugin, SystemLabel, SystemSet, IntoSystemDescriptor};
+use crate::camera::PanOrbitCamera;
+use bevy::{
+    prelude::{
+        App, Bundle, Component, IntoSystemDescriptor, Mut, Name, Plugin, Query,
+        Res, Resource, SystemLabel, SystemSet, Transform, Vec3, Deref
+    },
+    time::{FixedTimestep, Time},
+};
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 use bevy_mod_picking::Selection;
-use crate::camera::PanOrbitCamera;
 
 const DT: f32 = 0.01;
 pub const G: f32 = 6.67430e-11_f32;
@@ -34,70 +40,79 @@ pub struct Acceleration(Vec3);
 #[derive(Component, Inspectable)]
 pub struct Mass(f32);
 
+#[derive(Deref, Component, Inspectable)]
+pub struct Lines(Vec<(Vec3, Vec3)>);
+
+impl Default for Lines {
+    fn default() -> Self {
+        Self(Vec::new())
+    }
+}
+
 #[derive(Bundle, Inspectable)]
 pub struct BodyBundle {
     mass: Mass,
     transform: Transform,
     vel: Velocity,
     acc: Acceleration,
+    lines: Lines,
 }
 
 impl BodyBundle {
-    
     pub fn new(mass: f32, pos: Vec3, vel: Vec3) -> Self {
         Self {
             mass: Mass(mass),
             transform: Transform::from_translation(pos),
             vel: Velocity(vel),
-            acc: Acceleration::default()
+            acc: Acceleration::default(),
+            lines: Lines::default(),
         }
     }
-    
 }
 
 pub struct BodyPlugin;
 
 impl Plugin for BodyPlugin {
-    
     fn build(&self, app: &mut App) {
-        app
-        .init_resource::<Gravity>()
-        .register_inspectable::<Gravity>()
-        .register_inspectable::<Mass>()
-        .register_inspectable::<Velocity>()
-        .register_inspectable::<Acceleration>()
-        .register_inspectable::<BodyBundle>()
-        .add_system(body_focus)
-        .add_system_set(
-            SystemSet::new()
-                .with_system(
-                    update_acceleration
-                        .label(PhysicsSystem::UpdateAcceleration),
-                )
-                .with_system(
-                    update_velocity
-                        .label(PhysicsSystem::UpdateVelocity)
-                        .after(PhysicsSystem::UpdateAcceleration),
-                )
-                .with_system(
-                    movement
-                        .label(PhysicsSystem::Movement)
-                        .after(PhysicsSystem::UpdateVelocity),
-                ),
-        );
+        app.init_resource::<Gravity>()
+            .register_inspectable::<Gravity>()
+            .register_inspectable::<Mass>()
+            .register_inspectable::<Velocity>()
+            .register_inspectable::<Acceleration>()
+            .register_inspectable::<BodyBundle>()
+            .register_inspectable::<Lines>()
+            .add_system(body_focus)
+            .add_system_set(
+                SystemSet::new()
+                    .with_run_criteria(FixedTimestep::steps_per_second((15.0 / 0.01) as f64))
+                    .with_system(update_acceleration.label(PhysicsSystem::UpdateAcceleration))
+                    .with_system(
+                        update_velocity
+                            .label(PhysicsSystem::UpdateVelocity)
+                            .after(PhysicsSystem::UpdateAcceleration),
+                    )
+                    .with_system(
+                        movement
+                            .label(PhysicsSystem::Movement)
+                            .after(PhysicsSystem::UpdateVelocity),
+                    ),
+            );
     }
 }
 
-/// 
+///
 /// ```
 /// F = G*m1*m2/r^2
 /// ```
-/// 
+///
 /// - `F` is the gravitational force acting between two objects
 /// - `G` is the gravitational constant
 /// - `m1` and `m2` are the masses of the objects
 /// - `r` is the distance between the centers of their masses
-pub fn update_acceleration(g: Res<Gravity>, mut query: Query<(&Mass, &Transform, &mut Acceleration)>) {
+pub fn update_acceleration(
+    g: Res<Gravity>,
+    mut query: Query<(&Mass, &Transform, &mut Acceleration)>,
+) {
     let mut bodies: Vec<(&Mass, &Transform, Mut<Acceleration>)> = Vec::new();
     for (mass, transform, mut acc) in query.iter_mut() {
         acc.0 = Vec3::ZERO;
@@ -119,21 +134,25 @@ pub fn update_acceleration(g: Res<Gravity>, mut query: Query<(&Mass, &Transform,
     }
 }
 
-pub fn update_velocity(mut query: Query<(&mut Velocity, &Acceleration)>) {
+pub fn update_velocity(mut query: Query<(&mut Velocity, &Acceleration)>, time: Res<Time>) {
     for (mut vel, acc) in query.iter_mut() {
-        vel.0 += acc.0 * DT;
+        vel.0 += acc.0 * time.delta_seconds();
     }
 }
 
-pub fn movement(mut query: Query<(&mut Transform, &Velocity)>) {
+pub fn movement(
+    mut query: Query<(&mut Transform, &Velocity)>,
+    time: Res<Time>,
+) {
+    println!("{}", time.delta_seconds());
     for (mut transform, vel) in query.iter_mut() {
-        transform.translation += vel.0 * DT
+        transform.translation += vel.0 * time.delta_seconds();
     }
 }
 
 pub fn body_focus(
     mut query: Query<&mut PanOrbitCamera>,
-    selection: Query<(&Transform, &Selection, &Name)>
+    selection: Query<(&Transform, &Selection, &Name)>,
 ) {
     for (transform, selection, name) in &selection {
         if selection.selected() {
