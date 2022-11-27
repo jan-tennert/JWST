@@ -4,7 +4,7 @@ use bevy::{
         App, Bundle, Component, IntoSystemDescriptor, Mut, Name, Plugin, Query,
         Res, Resource, SystemLabel, SystemSet, Transform, Vec3, Deref
     },
-    time::{Time, FixedTimestep},
+    time::Time,
 };
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 use bevy_mod_picking::Selection;
@@ -37,7 +37,7 @@ pub struct Velocity(Vec3);
 pub struct Acceleration(Vec3);
 
 #[derive(Component, Inspectable)]
-pub struct Mass(f32);
+pub struct Mass(pub f32);
 
 #[derive(Deref, Component, Inspectable)]
 pub struct Lines(Vec<(Vec3, Vec3)>);
@@ -80,7 +80,6 @@ impl Plugin for BodyPlugin {
             .register_inspectable::<Acceleration>()
             .register_inspectable::<BodyBundle>()
             .register_inspectable::<Lines>()
-           // .add_system(body_focus)
             .add_system_set(
                 SystemSet::new()
                  //   .with_run_criteria(FixedTimestep::steps_per_second(200.0 as f64))
@@ -155,9 +154,9 @@ pub fn body_focus(
     mut query: Query<&mut PanOrbitCamera>,
     selection: Query<(&Transform, &Selection, &Name)>,
 ) {
-    for (transform, selection, name) in &selection {
+    for (transform, selection, _) in &selection {
         if selection.selected() {
-        println!("{}", name);               
+       // println!("{}", name);               
             for mut camera in query.iter_mut() {
                 if camera.focus != transform.translation {
                     camera.set_focus(transform.translation);

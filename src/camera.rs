@@ -5,7 +5,7 @@ use bevy::{
         Vec2, Vec3, App,
         Plugin, CoreStage
     },
-    window::Windows, time::Time,
+    window::Windows,
 };
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 

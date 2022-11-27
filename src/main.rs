@@ -1,6 +1,7 @@
 mod body;
 mod camera;
-//mod ui;
+mod ui;
+mod input;
 
 use crate::body::BodyBundle;
 use crate::camera::*;
@@ -8,11 +9,10 @@ use bevy::core_pipeline::{clear_color::ClearColorConfig, bloom::BloomSettings};
 use bevy::pbr::NotShadowCaster;
 use bevy::prelude::*;
 use bevy::render::view::NoFrustumCulling;
-use bevy::scene::SceneInstance;
 use bevy_inspector_egui::WorldInspectorPlugin;
 use bevy_mod_picking::{DefaultPickingPlugins, PickableBundle, PickingCameraBundle};
 use body::{Gravity, BodyPlugin};
-//use ui::UIPlugin;
+use ui::UIPlugin;
 
 fn main() {
     App::new()
@@ -28,7 +28,7 @@ fn main() {
         .add_plugins(DefaultPickingPlugins)
         .add_plugin(PanOrbitCameraPlugin)
         .add_plugin(BodyPlugin)
-   //     .add_plugin(UIPlugin)
+        .add_plugin(UIPlugin)
         .add_startup_system(setup)
         .run();
 }
@@ -36,7 +36,7 @@ fn main() {
 fn setup(
     mut commands: Commands,
     assets: Res<AssetServer>,
-      mut materials: ResMut<Assets<StandardMaterial>>,
+    //  mut materials: ResMut<Assets<StandardMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut g: ResMut<Gravity>,
 ) {
@@ -51,21 +51,21 @@ fn setup(
     g.0 *= DAY * DAY * 10.0f32.powi(-6) / 1.5f32.powi(3);      
                                     
     let sun_body = BodyBundle::new(1_988_500.0, Vec3::ZERO, Vec3::ZERO);
-   let default_collider_color = materials.add(Color::rgba(0.3, 0.5, 0.3, 0.3).into());
+   //let default_collider_color = materials.add(Color::rgba(0.3, 0.5, 0.3, 0.3).into());
 
     commands
         .spawn(SpatialBundle::from_transform(Transform::from_xyz(
             0.0, 0.0, 0.0,
         )))
         .insert(Name::new("Sun"))
-        .insert(meshes.add(shape::UVSphere::default().into()))
+        .insert(meshes.add(shape::UVSphere { radius: 0.6, ..default() }.into()))
         .insert(NotShadowCaster)
         .insert(PickableBundle::default())
         .insert(sun_body)
         .insert(PointLightBundle {
             point_light: PointLight {
                 intensity: 100000.0,
-                shadows_enabled: false,
+                shadows_enabled: true,
                 range: 200.0,
                 ..default()
             },
@@ -87,7 +87,7 @@ fn setup(
             4.0, 7.0, 0.0,
         )))
         .insert(Name::new("Earth"))
-        .insert(meshes.add(shape::UVSphere::default().into()))
+        .insert(meshes.add(shape::UVSphere { radius: 0.005, ..default() }.into()))
         .insert(PickableBundle::default())
         .insert(BodyBundle::new(
             5.97219,
@@ -133,7 +133,7 @@ fn setup(
             4.0, 7.0, 0.0,
         )))
         .insert(Name::new("Moon"))
-        .insert(meshes.add(shape::UVSphere::default().into()))
+        .insert(meshes.add(shape::UVSphere { radius: 0.002, ..default() }.into()))
         .insert(PickableBundle::default())
         .insert(BodyBundle::new(
             0.0734767,
