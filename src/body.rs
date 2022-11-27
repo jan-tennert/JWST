@@ -84,7 +84,7 @@ impl Plugin for BodyPlugin {
             .add_system(body_focus)
             .add_system_set(
                 SystemSet::new()
-                    .with_run_criteria(FixedTimestep::steps_per_second((15.0 / 0.01) as f64))
+                 //   .with_run_criteria(FixedTimestep::steps_per_second((15.0 / 0.01) as f64))
                     .with_system(update_acceleration.label(PhysicsSystem::UpdateAcceleration))
                     .with_system(
                         update_velocity
