@@ -1,5 +1,6 @@
 mod body;
 mod camera;
+//mod ui;
 
 use crate::body::BodyBundle;
 use crate::camera::*;
@@ -7,9 +8,11 @@ use bevy::core_pipeline::{clear_color::ClearColorConfig, bloom::BloomSettings};
 use bevy::pbr::NotShadowCaster;
 use bevy::prelude::*;
 use bevy::render::view::NoFrustumCulling;
+use bevy::scene::SceneInstance;
 use bevy_inspector_egui::WorldInspectorPlugin;
 use bevy_mod_picking::{DefaultPickingPlugins, PickableBundle, PickingCameraBundle};
 use body::{Gravity, BodyPlugin};
+//use ui::UIPlugin;
 
 fn main() {
     App::new()
@@ -25,6 +28,7 @@ fn main() {
         .add_plugins(DefaultPickingPlugins)
         .add_plugin(PanOrbitCameraPlugin)
         .add_plugin(BodyPlugin)
+   //     .add_plugin(UIPlugin)
         .add_startup_system(setup)
         .run();
 }
@@ -32,21 +36,22 @@ fn main() {
 fn setup(
     mut commands: Commands,
     assets: Res<AssetServer>,
-    //  mut materials: ResMut<Assets<StandardMaterial>>,
+      mut materials: ResMut<Assets<StandardMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut g: ResMut<Gravity>,
 ) {
-    let sun = assets.load("sun.glb#Scene0");
+    let sun: Handle<Scene> = assets.load("sun.glb#Scene0");
     let earth: Handle<Scene> = assets.load("earth.glb#Scene0");
-    let saturn: Handle<Scene> = assets.load("saturn.glb#Scene0");
+//    let saturn: Handle<Scene> = assets.load("saturn.glb#Scene0");
     let moon = assets.load("moon.glb#Scene0");
-    let jwst: Handle<Scene> = assets.load("jwst.glb#Scene0");
+ //   let jwst: Handle<Scene> = assets.load("jwst.glb#Scene0");
     const AU_TO_UNIT_SCALE: f32 = 10.0;
     const DAY: f32 = 86_400.0;
       
     g.0 *= DAY * DAY * 10.0f32.powi(-6) / 1.5f32.powi(3);      
                                     
     let sun_body = BodyBundle::new(1_988_500.0, Vec3::ZERO, Vec3::ZERO);
+   let default_collider_color = materials.add(Color::rgba(0.3, 0.5, 0.3, 0.3).into());
 
     commands
         .spawn(SpatialBundle::from_transform(Transform::from_xyz(
@@ -59,7 +64,7 @@ fn setup(
         .insert(sun_body)
         .insert(PointLightBundle {
             point_light: PointLight {
-                intensity: 10000.0,
+                intensity: 100000.0,
                 shadows_enabled: false,
                 range: 200.0,
                 ..default()
@@ -74,6 +79,8 @@ fn setup(
                 ..Default::default()
             });
         });
+
+            
 
     commands
         .spawn(SpatialBundle::from_transform(Transform::from_xyz(
@@ -98,7 +105,7 @@ fn setup(
                 ..Default::default()
             });
         });
-    
+            
    /* commands.spawn(SpatialBundle::from_transform(Transform::from_xyz(
             4.0, 7.0, 0.0,
         )))
@@ -175,6 +182,7 @@ fn setup(
     //camera
     commands.spawn((
         Camera3dBundle {
+            projection: Projection::Perspective(PerspectiveProjection { near: 0.0001, ..default() }),
             transform: Transform::from_translation(translation).looking_at(Vec3::ZERO, Vec3::Y),
             camera_3d: Camera3d {
                 clear_color: ClearColorConfig::Custom(Color::BLACK),

@@ -4,12 +4,11 @@ use bevy::{
         App, Bundle, Component, IntoSystemDescriptor, Mut, Name, Plugin, Query,
         Res, Resource, SystemLabel, SystemSet, Transform, Vec3, Deref
     },
-    time::{FixedTimestep, Time},
+    time::{Time, FixedTimestep},
 };
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 use bevy_mod_picking::Selection;
 
-const DT: f32 = 0.01;
 pub const G: f32 = 6.67430e-11_f32;
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, SystemLabel)]
@@ -84,7 +83,7 @@ impl Plugin for BodyPlugin {
             .add_system(body_focus)
             .add_system_set(
                 SystemSet::new()
-                 //   .with_run_criteria(FixedTimestep::steps_per_second((15.0 / 0.01) as f64))
+                 //   .with_run_criteria(FixedTimestep::steps_per_second(200.0 as f64))
                     .with_system(update_acceleration.label(PhysicsSystem::UpdateAcceleration))
                     .with_system(
                         update_velocity
@@ -144,7 +143,6 @@ pub fn movement(
     mut query: Query<(&mut Transform, &Velocity)>,
     time: Res<Time>,
 ) {
-    println!("{}", time.delta_seconds());
     for (mut transform, vel) in query.iter_mut() {
         transform.translation += vel.0 * time.delta_seconds();
     }
@@ -156,6 +154,7 @@ pub fn body_focus(
 ) {
     for (transform, selection, name) in &selection {
         if selection.selected() {
+        println!("{}", name);               
             for mut camera in query.iter_mut() {
                 if camera.focus != transform.translation {
                     camera.set_focus(transform.translation);

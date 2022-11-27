@@ -3,9 +3,9 @@ use bevy::{
     prelude::{
         Component, EventReader, Input, Mat3, MouseButton, Projection, Quat, Query, Res, Transform,
         Vec2, Vec3, App,
-        Plugin
+        Plugin, CoreStage
     },
-    window::Windows,
+    window::Windows, time::Time,
 };
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 
@@ -43,7 +43,7 @@ impl Plugin for PanOrbitCameraPlugin {
     fn build(&self, app: &mut App) {
         app
         .register_inspectable::<PanOrbitCamera>()
-        .add_system(pan_orbit_camera);
+        .add_system_to_stage(CoreStage::PostUpdate, pan_orbit_camera);
     }  
 } 
 
@@ -53,7 +53,7 @@ pub fn pan_orbit_camera(
     mut ev_motion: EventReader<MouseMotion>,
     mut ev_scroll: EventReader<MouseWheel>,
     input_mouse: Res<Input<MouseButton>>,
-    mut query: Query<(&mut PanOrbitCamera, &mut Transform, &Projection)>,
+    mut query: Query<(&mut PanOrbitCamera, &mut Transform, &Projection)>
 ) {
     // change input mapping for orbit and panning here
     let orbit_button = MouseButton::Right;
