@@ -80,7 +80,7 @@ impl Plugin for BodyPlugin {
             .register_inspectable::<Acceleration>()
             .register_inspectable::<BodyBundle>()
             .register_inspectable::<Lines>()
-            .add_system(body_focus)
+           // .add_system(body_focus)
             .add_system_set(
                 SystemSet::new()
                  //   .with_run_criteria(FixedTimestep::steps_per_second(200.0 as f64))
@@ -94,6 +94,9 @@ impl Plugin for BodyPlugin {
                         movement
                             .label(PhysicsSystem::Movement)
                             .after(PhysicsSystem::UpdateVelocity),
+                    )
+                    .with_system(
+                        body_focus.after(PhysicsSystem::Movement)
                     ),
             );
     }
