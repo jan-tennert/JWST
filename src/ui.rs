@@ -113,8 +113,9 @@ fn body_ui(
                 ui.label(format!("{} km/s", velocity.0.length() / 10.0 * 1731.0));
                 // Distance from Sun
                 ui.label(RichText::new("Distance from sun").size(16.0).underline());
-                ui.label(format!("{} km", (transform.translation.distance(sun_pos) / 10.0 * 1.496e+8) as f64));
-                ui.label(format!("{} au", (transform.translation.distance(sun_pos) / 10.0)));
+                let distance_in_au = transform.translation.distance(sun_pos) / 10.0;
+                ui.label(format!("{} km", (distance_in_au * 1.496e+8) as f64));
+                ui.label(format!("{} au", distance_in_au));
                 ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
                     if ui.button("Delete").clicked() {
                         commands.entity(entity).despawn_recursive()
