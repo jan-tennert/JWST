@@ -76,7 +76,6 @@ fn setup(
     g.0 *= DAY * DAY * 10.0f32.powi(-6) / 1.5f32.powi(3);      
                                     
     let sun_body = BodyBundle::new(1_988_500.0, Vec3::ZERO, Vec3::ZERO);
-
     commands
         .spawn(SpatialBundle::from_transform(Transform::from_xyz(
             0.0, 0.0, 0.0,
@@ -88,9 +87,10 @@ fn setup(
         .insert(sun_body)
         .insert(PointLightBundle {
             point_light: PointLight {
-                intensity: 100000.0,
+                intensity: 10000.0,
                 shadows_enabled: true,
-                range: 200.0,
+                range: 600.0,
+                radius: 0.6,
                 ..default()
             },
             ..default()
@@ -135,6 +135,10 @@ fn setup(
             camera_3d: Camera3d {
                 clear_color: ClearColorConfig::Custom(Color::BLACK),
                 ..default()
+            },
+            camera: Camera {
+                hdr: true,
+                ..default()   
             },
             ..Default::default()
         },

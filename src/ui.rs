@@ -1,9 +1,13 @@
-use bevy::prelude::{Plugin, App, Name, Query, ResMut, Mut, Entity, Commands, DespawnRecursiveExt, Transform};
+use bevy::{prelude::{Plugin, App, Name, Query, ResMut, Mut, Entity, Commands, DespawnRecursiveExt, Transform, Vec3, Res, Resource, IntoSystemDescriptor}, time::Time};
 use bevy_egui::*;
-use bevy_inspector_egui::egui::{TextEdit, RichText};
+use bevy_inspector_egui::{egui::{TextEdit, RichText}, Inspectable, RegisterInspectable};
 use bevy_mod_picking::Selection;
+use chrono::{NaiveDate, Days};
 
-use crate::{body::{Mass, Velocity, Acceleration}, input::BlockInputPlugin};
+use crate::{body::{Mass, Velocity, Acceleration, movement}, input::BlockInputPlugin};
+
+#[derive(Resource, Inspectable, Default)]
+pub struct SimTime(f32);
 
 pub struct UIPlugin;
 
@@ -11,10 +15,27 @@ impl Plugin for UIPlugin {
     fn build(&self, app: &mut App) {
         app
        // .add_plugin(EguiPlugin)
+        .register_inspectable::<SimTime>()
+        .init_resource::<SimTime>()
         .add_plugin(BlockInputPlugin)
         .add_system(system_ui)
-        .add_system(body_ui);
+        .add_system(body_ui)
+        .add_system(time_ui.after(movement));
     }
+}
+
+pub fn time_ui(
+   time: Res<Time>,
+   mut sim_time: ResMut<SimTime>,
+   mut egui_context: ResMut<EguiContext>,
+) {
+    sim_time.0 += time.delta_seconds();
+    let date = NaiveDate::from_ymd_opt(2022, 11, 25).unwrap().checked_add_days(Days::new(sim_time.0.round() as u64)).unwrap();
+    egui::TopBottomPanel::bottom("time_panel")
+    .resizable(false)
+    .show(egui_context.ctx_mut(), |ui| {
+        ui.label(format!("{}", date.format("%d.%m.%Y")));
+    });
 }
 
 pub fn system_ui(
@@ -25,7 +46,7 @@ pub fn system_ui(
     let mut selected_body: Option<&str> = None;
     egui::SidePanel::left("system_panel")
     .default_width(400.0)
-    .resizable(false)
+    .resizable(true)
     .show(egui_context.ctx_mut(), | ui| {
         ui.heading("Bodies");
         for (name, mut selected) in query.iter_mut() {
@@ -48,17 +69,16 @@ pub fn system_ui(
 fn body_ui(
     mut egui_context: ResMut<EguiContext>,
     mut commands: Commands,
-    mut query: Query<(&Name, &Selection, Entity, &Transform, &Velocity, &Acceleration, &mut Mass)>
+    mut query: Query<(&Name, &Selection, Entity, &Transform, &Velocity, &mut Mass)>
 ) {
-    for (name, selection, entity, transform, velocity, acceleration, mut mass) in query.iter_mut() {
+    let sun_pos = Vec3::splat(0.0);
+    for (name, selection, entity, transform, velocity, mut mass) in query.iter_mut() {
         if selection.selected() {
-            
             egui::SidePanel::right("body_panel")
             .max_width(250.0)
-            .resizable(false)
+            .resizable(true)
             .show(egui_context.ctx_mut(), | ui| {
                 ui.heading(name.as_str());
-                
                 
                 //Mass block
                 ui.label(RichText::new("Mass").size(16.0).underline());
@@ -89,9 +109,12 @@ fn body_ui(
                 ui.label(RichText::new("Vector Position (unit)").size(16.0).underline());
                 ui.label(format!("X: {:.2} Y: {:.2} Z: {:.2}", transform.translation.x, transform.translation.y, transform.translation.z));
                 // Velocity
-                ui.label(RichText::new("Vector Velocity (unit/s)").size(16.0).underline());
-                ui.label(format!("X: {:.2} Y: {:.2} Z: {:.2}", velocity.0.x, velocity.0.y, velocity.0.z));
-                
+                ui.label(RichText::new("Velocity").size(16.0).underline());
+                ui.label(format!("{} km/s", velocity.0.length() / 10.0 * 1731.0));
+                // Distance from Sun
+                ui.label(RichText::new("Distance from sun").size(16.0).underline());
+                ui.label(format!("{} km", (transform.translation.distance(sun_pos) / 10.0 * 1.496e+8) as f64));
+                ui.label(format!("{} au", (transform.translation.distance(sun_pos) / 10.0)));
                 ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
                     if ui.button("Delete").clicked() {
                         commands.entity(entity).despawn_recursive()
