@@ -16,6 +16,8 @@ bevy = "0.9"
 bevy-inspector-egui = "0.14.0"
 bevy_mod_picking = "0.10"
 bevy_egui = "0.17.1"
+bevy_polyline = "0.4.0"
+ringbuffer = "0.10"
 #bevy_atmosphere = { git = "https://github.com/JonahPlusPlus/bevy_atmosphere" }
 
 [target.wasm32-unknown-unknown]

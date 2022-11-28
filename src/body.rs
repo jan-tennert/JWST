@@ -1,15 +1,17 @@
+use std::time::Duration;
+
 use crate::camera::PanOrbitCamera;
 use bevy::{
     prelude::{
         App, Bundle, Component, IntoSystemDescriptor, Mut, Name, Plugin, Query,
         Res, Resource, SystemLabel, SystemSet, Transform, Vec3, Deref
     },
-    time::Time,
+    time::{Time, Timer, TimerMode, FixedTimestep},
 };
-use bevy_inspector_egui::{Inspectable, RegisterInspectable};
+use bevy_inspector_egui::{Inspectable, RegisterInspectable, egui::TextBuffer};
 use bevy_mod_picking::Selection;
 
-pub const G: f32 = 6.67430e-11_f32;
+pub const G: f32 = 6.67430e-11_f32; //gravitational constant
 
 #[derive(Debug, Hash, PartialEq, Eq, Clone, SystemLabel)]
 pub enum PhysicsSystem {
@@ -28,16 +30,24 @@ impl Default for Gravity {
 }
 
 #[derive(Default, Component, Inspectable)]
-pub struct Position(Vec3);
+pub struct Velocity(pub Vec3);
 
 #[derive(Default, Component, Inspectable)]
-pub struct Velocity(Vec3);
-
-#[derive(Default, Component, Inspectable)]
-pub struct Acceleration(Vec3);
+pub struct Acceleration(pub Vec3);
 
 #[derive(Component, Inspectable)]
 pub struct Mass(pub f32);
+
+#[derive(Component, Inspectable)]
+pub struct EnableLines(pub bool);
+
+impl Default for EnableLines {
+    
+    fn default() -> Self {
+        EnableLines(true)
+    }
+    
+}
 
 #[derive(Deref, Component, Inspectable)]
 pub struct Lines(Vec<(Vec3, Vec3)>);
@@ -55,6 +65,7 @@ pub struct BodyBundle {
     vel: Velocity,
     acc: Acceleration,
     lines: Lines,
+    enable_lines: EnableLines
 }
 
 impl BodyBundle {
@@ -65,6 +76,7 @@ impl BodyBundle {
             vel: Velocity(vel),
             acc: Acceleration::default(),
             lines: Lines::default(),
+            enable_lines: EnableLines::default()
         }
     }
 }
@@ -82,7 +94,7 @@ impl Plugin for BodyPlugin {
             .register_inspectable::<Lines>()
             .add_system_set(
                 SystemSet::new()
-                 //   .with_run_criteria(FixedTimestep::steps_per_second(200.0 as f64))
+             //       .with_run_criteria(FixedTimestep::steps_per_second(100.0 as f64))
                     .with_system(update_acceleration.label(PhysicsSystem::UpdateAcceleration))
                     .with_system(
                         update_velocity

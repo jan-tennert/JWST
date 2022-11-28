@@ -3,11 +3,13 @@ use bevy::{
     prelude::{
         Component, EventReader, Input, Mat3, MouseButton, Projection, Quat, Query, Res, Transform,
         Vec2, Vec3, App,
-        Plugin, CoreStage
+        Plugin, CoreStage, IntoSystemDescriptor
     },
     window::Windows,
 };
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
+
+use crate::body::body_focus;
 
 /// Tags an entity as capable of panning and orbiting.
 #[derive(Component, Inspectable)]
@@ -43,7 +45,8 @@ impl Plugin for PanOrbitCameraPlugin {
     fn build(&self, app: &mut App) {
         app
         .register_inspectable::<PanOrbitCamera>()
-        .add_system_to_stage(CoreStage::PostUpdate, pan_orbit_camera);
+        .add_system(pan_orbit_camera.after(body_focus));
+        //.add_system_to_stage(CoreStage::PostUpdate, pan_orbit_camera);
     }  
 } 
 
