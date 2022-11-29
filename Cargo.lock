@@ -859,8 +859,7 @@ dependencies = [
 [[package]]
 name = "bevy_text_mesh"
 version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c7bac16daf87de2dd2cb6fda0053587d64b2fa1773af1615f30980098cc2a7a0"
+source = "git+https://github.com/jan-tennert/bevy_text_mesh?rev=1f22c2a#1f22c2ab2b6bc3f991a57174958daa0f58d39515"
 dependencies = [
  "anyhow",
  "bevy",

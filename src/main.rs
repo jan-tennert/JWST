@@ -142,7 +142,7 @@ fn setup(
             },
             ..Default::default()
         },
-        BloomSettings::default(),
+        BloomSettings { threshold: 0.5, ..default() },
         PanOrbitCamera {
             radius,
             ..Default::default()

@@ -1,8 +1,9 @@
-use bevy::prelude::{Plugin, Query, Name, Transform, Vec3, Commands, Handle, Res, AssetServer, Color, Component, ParamSet, IntoSystemDescriptor};
+use bevy::prelude::{Plugin, Query, Name, Transform, Vec3, Commands, Handle, Res, AssetServer, Color, Component, ParamSet, IntoSystemDescriptor, ResMut, Assets, StandardMaterial, AlphaMode, Visibility};
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
+use bevy_mod_picking::PickableBundle;
 use bevy_text_mesh::{TextMeshFont, TextMeshPlugin, TextMeshBundle, TextMesh, TextMeshStyle, TextMeshSize, SizeUnit};
 
-use crate::body::movement;
+use crate::{body::movement, camera::PanOrbitCamera};
 
 pub struct LagrangePlugin;
 
@@ -26,49 +27,42 @@ fn spawn_lagrange_points(
     assets: Res<AssetServer>,
 ) {
     let roboto: Handle<TextMeshFont> = assets.load("fonts/Roboto-Regular.ttf#mesh");
-    commands.spawn(TextMeshBundle {
-        text_mesh: TextMesh {
-            text: "L1".to_string(),
-            style: TextMeshStyle {
-                color: Color::WHITE,
-                font: roboto.clone(),
-                font_size: SizeUnit::NonStandard(1.0),
+    let lagrange_points = vec![
+        (Name::new("SE-L1"), LagrangePoint(0.1)), 
+        (Name::new("SE-L2"), LagrangePoint(-0.1))
+    ];
+    for (name, point) in lagrange_points {
+        commands.spawn(TextMeshBundle {
+            text_mesh: TextMesh {
+                text: name.to_string(),
+                style: TextMeshStyle {
+                    color: Color::WHITE,
+                    font: roboto.clone(),
+                    font_size: SizeUnit::NonStandard(0.5),
+                    ..Default::default()
+                },
                 ..Default::default()
             },
+            transform: Transform::from_xyz(-1., 1.75, 0.),
+            visibility: Visibility::INVISIBLE,
             ..Default::default()
-        },
-        transform: Transform::from_xyz(-1., 1.75, 0.),
-        ..Default::default()
-    })
-    .insert(LagrangePoint(0.1))
-    .insert(Name::new("L1"));
-    
-    commands.spawn(TextMeshBundle {
-        text_mesh: TextMesh {
-            text: "L2".to_string(),
-            style: TextMeshStyle {
-                color: Color::WHITE,
-                font: roboto,
-                font_size: SizeUnit::NonStandard(1.0),
-                ..Default::default()
-            },
-            ..Default::default()
-        },
-        transform: Transform::from_xyz(-1., 1.75, 0.),
-        ..Default::default()
-    })
-    .insert(LagrangePoint(-0.1))
-    .insert(Name::new("L2"));
+        })
+        .insert(point)
+        .insert(PickableBundle::default())
+        .insert(name);
+    }
 }
 
-fn calculate_lagrange_points(
+pub fn calculate_lagrange_points(
     mut set: ParamSet<(
         Query<(&LagrangePoint, &mut Transform)>,
-        Query<(&Name, &Transform)>
+        Query<(&Name, &Transform)>,
+        Query<(&PanOrbitCamera, &Transform)>
     )>
 ) {
     let mut sun: Option<Vec3> = None;
     let mut earth: Option<Vec3> = None;
+    let camera_rot = set.p2().single().1.rotation;
     for (name, transform) in set.p1().iter() {
         if name.as_str() == "Earth" {
             earth = Some(transform.translation);
@@ -81,6 +75,7 @@ fn calculate_lagrange_points(
             let normalized_pos = (spos - epos).normalize_or_zero() * point.0;
             let actual_pos = normalized_pos + epos;
             transform.translation = actual_pos;
+            transform.rotation = camera_rot;
         }
     } 
 }

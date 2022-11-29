@@ -1,14 +1,12 @@
-use std::time::Duration;
-
-use crate::camera::PanOrbitCamera;
+use crate::{camera::PanOrbitCamera, lagrange::calculate_lagrange_points};
 use bevy::{
     prelude::{
         App, Bundle, Component, IntoSystemDescriptor, Mut, Name, Plugin, Query,
         Res, Resource, SystemLabel, SystemSet, Transform, Vec3, Deref
     },
-    time::{Time, Timer, TimerMode, FixedTimestep},
+    time::Time,
 };
-use bevy_inspector_egui::{Inspectable, RegisterInspectable, egui::TextBuffer};
+use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 use bevy_mod_picking::Selection;
 
 pub const G: f32 = 6.67430e-11_f32; //gravitational constant
@@ -92,6 +90,7 @@ impl Plugin for BodyPlugin {
             .register_inspectable::<Acceleration>()
             .register_inspectable::<BodyBundle>()
             .register_inspectable::<Lines>()
+            .add_system(body_focus.after(calculate_lagrange_points))
             .add_system_set(
                 SystemSet::new()
              //       .with_run_criteria(FixedTimestep::steps_per_second(100.0 as f64))
@@ -106,9 +105,9 @@ impl Plugin for BodyPlugin {
                             .label(PhysicsSystem::Movement)
                             .after(PhysicsSystem::UpdateVelocity),
                     )
-                    .with_system(
+                    /*.with_system(
                         body_focus.after(PhysicsSystem::Movement)
-                    ),
+                    )*/,
             );
     }
 }

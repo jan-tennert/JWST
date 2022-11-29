@@ -1,10 +1,10 @@
-use bevy::{prelude::{Plugin, App, Name, Query, ResMut, Mut, Entity, Commands, DespawnRecursiveExt, Transform, Vec3, Res, Resource, IntoSystemDescriptor}, time::Time};
+use bevy::{prelude::{Plugin, App, Name, Query, ResMut, Mut, Entity, Commands, DespawnRecursiveExt, Transform, Vec3, Res, Resource, IntoSystemDescriptor, ParamSet, Visibility, Without, With}, time::Time};
 use bevy_egui::*;
 use bevy_inspector_egui::{egui::{TextEdit, RichText}, Inspectable, RegisterInspectable};
 use bevy_mod_picking::Selection;
 use chrono::{NaiveDate, Days};
 
-use crate::{body::{Mass, Velocity, Acceleration, movement}, input::BlockInputPlugin};
+use crate::{body::{Mass, Velocity, Acceleration, movement}, input::BlockInputPlugin, lagrange::LagrangePoint};
 
 #[derive(Resource, Inspectable, Default)]
 pub struct SimTime(f32);
@@ -40,25 +40,41 @@ pub fn time_ui(
 
 pub fn system_ui(
     mut egui_context: ResMut<EguiContext>,
-    mut query: Query<(&Name, &mut Selection)>
+    mut body_query: Query<(&Name, &mut Selection, &mut Visibility, Without<LagrangePoint>)>,
+    mut lagrange_point_query: Query<(&Name, &mut Selection, &mut Visibility, With<LagrangePoint>)>
 ) {
-    let mut bodies: Vec<(&Name, Mut<Selection>)> = Vec::new();
+    let mut points: Vec<(&Name, Mut<Selection>)> = Vec::new();
     let mut selected_body: Option<&str> = None;
+    
     egui::SidePanel::left("system_panel")
     .default_width(400.0)
     .resizable(true)
     .show(egui_context.ctx_mut(), | ui| {
         ui.heading("Bodies");
-        for (name, mut selected) in query.iter_mut() {
-            if ui.button(name.as_str()).clicked() {
-                selected.set_selected(true);
-                selected_body = Some(name.as_str());
-            }
-            bodies.push((name, selected));
+        for (name, mut selected, mut visibility, _) in body_query.iter_mut() {
+            ui.horizontal(|ui| {
+                ui.checkbox(&mut visibility.is_visible, "");
+                if ui.button(name.as_str()).clicked() {
+                    selected.set_selected(true);
+                    selected_body = Some(name.as_str());
+                }
+            });
+            points.push((name, selected));
+        }
+        ui.heading("Lagrange Points");
+        for (name, mut selected, mut visibility, _) in lagrange_point_query.iter_mut() {
+            ui.horizontal(|ui| {
+                ui.checkbox(&mut visibility.is_visible, "");
+                if ui.button(name.as_str()).clicked() {
+                    selected.set_selected(true);
+                    selected_body = Some(name.as_str());
+                }
+            });
+            points.push((name, selected))
         }
     });
     if let Some(selected_name) = selected_body {
-        for (name, mut selection) in bodies {
+        for (name, mut selection) in points {
             if selected_name != name.as_str() {
                 selection.set_selected(false);
             }
