@@ -5,28 +5,23 @@ mod input;
 mod lagrange;
 mod lines;
 mod bodies;
+mod skybox;
 
-use std::str::FromStr;
 
 use crate::bodies::Body;
 use crate::body::BodyBundle;
-use crate::lines::{Trail, TRAIL_LENGTH};
 use crate::camera::*;
 use bevy::core_pipeline::{clear_color::ClearColorConfig, bloom::BloomSettings};
-use bevy::math::Vec3A;
+use bevy::diagnostic::{LogDiagnosticsPlugin, FrameTimeDiagnosticsPlugin};
 use bevy::pbr::NotShadowCaster;
 use bevy::prelude::*;
 use bevy::render::view::NoFrustumCulling;
 use bevy_inspector_egui::WorldInspectorPlugin;
 use bevy_mod_picking::{DefaultPickingPlugins, PickableBundle, PickingCameraBundle};
-use bevy_polyline::prelude::{PolylineBundle, PolylineMaterial, Polyline};
 use body::{Gravity, BodyPlugin};
 use lagrange::LagrangePlugin;
-use lines::LinePlugin;
-use ringbuffer::ConstGenericRingBuffer;
+use skybox::SkyboxPlugin;
 use ui::UIPlugin;
-
-
 
 
 fn main() {
@@ -45,6 +40,9 @@ fn main() {
         .add_plugin(BodyPlugin)
         .add_plugin(UIPlugin)
         .add_plugin(LagrangePlugin)
+        .add_plugin(SkyboxPlugin)
+        .add_plugin(LogDiagnosticsPlugin::default())
+        .add_plugin(FrameTimeDiagnosticsPlugin::default())
      //   .add_plugin(LinePlugin)
         .add_startup_system(setup)
         .run();
@@ -57,19 +55,9 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut g: ResMut<Gravity>,
 ) {
-    let sun: Handle<Scene> = assets.load("sun.glb#Scene0");
-    let earth: Handle<Scene> = assets.load("earth.glb#Scene0");
-    let saturn: Handle<Scene> = assets.load("saturn.glb#Scene0");
-    let venus: Handle<Scene> = assets.load("venus.glb#Scene0");
-    let pluto: Handle<Scene> = assets.load("pluto.glb#Scene0");
-    let jupiter: Handle<Scene> = assets.load("jupiter.glb#Scene0");
-    let mercury: Handle<Scene> = assets.load("mercury.glb#Scene0");
-    let mars: Handle<Scene> = assets.load("mars.glb#Scene0");
-    let uranus: Handle<Scene> = assets.load("uranus.glb#Scene0");
-    let moon = assets.load("moon.glb#Scene0");
 //    let jwst: Handle<Scene> = assets.load("jwst.glb#Scene0");
   //  let hubble = assets.load("hubble.glb#Scene0");
-    let bodies = vec![Body::earth(earth), Body::moon(moon), Body::saturn(saturn), Body::venus(venus), Body::pluto(pluto), Body::mercury(mercury), Body::jupiter(jupiter), Body::mars(mars), Body::uranus(uranus)];
+    let bodies = vec![Body::earth(), Body::moon(), Body::saturn(), Body::venus(), Body::pluto(), Body::mercury(), Body::jupiter(), Body::mars(), Body::uranus(), Body::iss()];
     
     const DAY: f32 = 86_400.0;
       
@@ -98,7 +86,7 @@ fn setup(
         .insert(NoFrustumCulling)
         .with_children(|commands| {
             commands.spawn(SceneBundle {
-                scene: sun,
+                scene: assets.load("models/sun.glb#Scene0"),
                 transform: Transform::from_scale(Vec3::new(0.001, 0.001, 0.001)),
                 ..Default::default()
             });
@@ -116,7 +104,7 @@ fn setup(
         .with_children(|commands| {
             commands.spawn((
                 SceneBundle {
-                    scene: body.model,
+                    scene: assets.load(body.model.as_str()),
                     transform: Transform::from_scale(Vec3::splat(body.model_scale)),
                     ..Default::default()
                 },

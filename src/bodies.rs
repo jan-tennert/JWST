@@ -1,11 +1,11 @@
-use bevy::{prelude::{Handle, Vec3}, scene::Scene};
+use bevy::prelude::Vec3;
 
 use crate::body::BodyBundle;
 
 const AU_TO_UNIT_SCALE: f32 = 10.0;
 
 pub struct Body {
-    pub model: Handle<Scene>,
+    pub model: String,
     pub body: BodyBundle,
     pub radius: f32,
     pub model_scale: f32,
@@ -14,9 +14,9 @@ pub struct Body {
 
 impl Body {
     
-    pub fn earth(earth_model: Handle<Scene>) -> Self {
+    pub fn earth() -> Self {
         Body {
-            model: earth_model,
+            model: "models/earth.glb#Scene0".to_string(),
             radius: 0.005,
             body: BodyBundle::new(
                 5.97219,
@@ -32,9 +32,9 @@ impl Body {
         }
     }
     
-    pub fn saturn(saturn_model: Handle<Scene>) -> Self {
+    pub fn saturn() -> Self {
         Body {
-            model: saturn_model,
+            model: "models/saturn.glb#Scene0".to_string(),
             radius: 0.005,
             body: BodyBundle::new(
                 568.3,
@@ -50,9 +50,9 @@ impl Body {
         }
     }
     
-    pub fn jupiter(jupiter_model: Handle<Scene>) -> Self {
+    pub fn jupiter() -> Self {
         Body {
-            model: jupiter_model,
+            model: "models/jupiter.glb#Scene0".to_string(),
             radius: 0.005,
             body: BodyBundle::new(
                 1898.187,
@@ -68,9 +68,9 @@ impl Body {
         }
     }
     
-    pub fn mars(mars_model: Handle<Scene>) -> Self {
+    pub fn mars() -> Self {
         Body {
-            model: mars_model,
+            model: "models/mars.glb#Scene0".to_string(),
             radius: 0.005,
             body: BodyBundle::new(
                 0.64171,
@@ -86,9 +86,9 @@ impl Body {
         }
     }
     
-    pub fn uranus(uranus_model: Handle<Scene>) -> Self {
+    pub fn uranus() -> Self {
         Body {
-            model: uranus_model,
+            model: "models/uranus.glb#Scene0".to_string(),
             radius: 0.005,
             body: BodyBundle::new(
                 86.813,
@@ -104,9 +104,9 @@ impl Body {
         }
     }
     
-    pub fn mercury(mercury_model: Handle<Scene>) -> Self {
+    pub fn mercury() -> Self {
         Body {
-            model: mercury_model,
+            model: "models/mercury.glb#Scene0".to_string(),
             radius: 0.005,
             body: BodyBundle::new(
                 0.3302,
@@ -122,9 +122,9 @@ impl Body {
         }
     }
     
-    pub fn venus(venus_model: Handle<Scene>) -> Self {
+    pub fn venus() -> Self {
         Body {
-            model: venus_model,
+            model: "models/venus.glb#Scene0".to_string(),
             radius: 0.005,
             body: BodyBundle::new(
                 4.867,
@@ -140,9 +140,9 @@ impl Body {
         }
     }
     
-    pub fn pluto(pluto_model: Handle<Scene>) -> Self {
+    pub fn pluto() -> Self {
         Body {
-            model: pluto_model,
+            model: "models/pluto.glb#Scene0".to_string(),
             radius: 0.005,
             body: BodyBundle::new(
                 0.0130900,
@@ -158,9 +158,9 @@ impl Body {
         }
     }
     
-    pub fn moon(moon_model: Handle<Scene>) -> Self {
+    pub fn moon() -> Self {
         Body {
-            model: moon_model,
+            model: "models/moon.glb#Scene0".to_string(),
             radius: 0.002,
             body: BodyBundle::new(
                 0.0734767,
@@ -176,9 +176,9 @@ impl Body {
         }
     }
     
-    pub fn jwst(jwst_model: Handle<Scene>) -> Self {
+    pub fn jwst() -> Self {
         Body {
-            model: jwst_model,
+            model: "models/jwst.glb#Scene0".to_string(),
             radius: 0.002,
             body: BodyBundle::new(
                 6200.0e-24,
@@ -194,9 +194,27 @@ impl Body {
         }
     }
     
-    pub fn hubble(hubble_model: Handle<Scene>) -> Self {
+    pub fn iss() -> Self {
         Body {
-            model: hubble_model,
+            model: "models/iss.glb#Scene0".to_string(),
+            radius: 0.002,
+            body: BodyBundle::new(
+                0.000000000000000000000444615,
+                Vec3::new(
+                4.488043238527515E-01, 8.751376110417752E-01, 1.941969204321329E-04
+                ) * AU_TO_UNIT_SCALE,
+                Vec3::new(
+                -1.504701637582184E-02, 1.177161600016825E-02, -2.108766983760775E-03
+                ) * AU_TO_UNIT_SCALE
+            ),
+            model_scale: 0.000003,
+            name: "ISS".to_string()
+        }
+    }
+    
+    pub fn hubble() -> Self {
+        Body {
+            model: "models/hubble.glb#Scene0".to_string(),
             radius: 0.002,
             body: BodyBundle::new(
                 11600.0 / f32::powf(10.0, 24.0),

@@ -1,10 +1,10 @@
-use bevy::{prelude::{Plugin, App, Name, Query, ResMut, Mut, Entity, Commands, DespawnRecursiveExt, Transform, Vec3, Res, Resource, IntoSystemDescriptor, ParamSet, Visibility, Without, With}, time::Time};
+use bevy::{prelude::{Plugin, App, Name, Query, ResMut, Mut, Entity, Commands, DespawnRecursiveExt, Transform, Vec3, Res, Resource, IntoSystemDescriptor, ParamSet, Visibility, Without, With, MaterialMeshBundle, Camera}, time::Time};
 use bevy_egui::*;
 use bevy_inspector_egui::{egui::{TextEdit, RichText}, Inspectable, RegisterInspectable};
 use bevy_mod_picking::Selection;
 use chrono::{NaiveDate, Days};
 
-use crate::{body::{Mass, Velocity, Acceleration, movement}, input::BlockInputPlugin, lagrange::LagrangePoint};
+use crate::{body::{Mass, Velocity, Acceleration, movement}, input::BlockInputPlugin, lagrange::LagrangePoint, skybox::{CubemapMaterial, Skybox}};
 
 #[derive(Resource, Inspectable, Default)]
 pub struct SimTime(f32);
@@ -18,9 +18,9 @@ impl Plugin for UIPlugin {
         .register_inspectable::<SimTime>()
         .init_resource::<SimTime>()
         .add_plugin(BlockInputPlugin)
-        .add_system(system_ui)
-        .add_system(body_ui)
-        .add_system(time_ui.after(movement));
+        .add_system(system_ui.after(time_ui))
+        .add_system(body_ui.after(movement))
+        .add_system(time_ui.after(body_ui));
     }
 }
 
@@ -41,7 +41,9 @@ pub fn time_ui(
 pub fn system_ui(
     mut egui_context: ResMut<EguiContext>,
     mut body_query: Query<(&Name, &mut Selection, &mut Visibility, Without<LagrangePoint>)>,
-    mut lagrange_point_query: Query<(&Name, &mut Selection, &mut Visibility, With<LagrangePoint>)>
+    mut lagrange_point_query: Query<(&Name, &mut Selection, &mut Visibility, With<LagrangePoint>)>,
+    mut skybox: Query<(&mut Visibility, &Skybox, Without<LagrangePoint>, Without<Selection>, Without<Name>)>,
+    mut camera: Query<(&mut Camera)>
 ) {
     let mut points: Vec<(&Name, Mut<Selection>)> = Vec::new();
     let mut selected_body: Option<&str> = None;
@@ -71,6 +73,13 @@ pub fn system_ui(
                 }
             });
             points.push((name, selected))
+        }
+        ui.heading("Options");
+        if let Ok(mut visible) = skybox.get_single_mut() {
+           ui.checkbox(&mut visible.0.is_visible, "Milky Way background"); 
+        }
+        if let Ok(mut camera) = camera.get_single_mut() {
+            ui.checkbox(&mut camera.hdr, "HDR/Bloom");
         }
     });
     if let Some(selected_name) = selected_body {
@@ -126,12 +135,12 @@ fn body_ui(
                 ui.label(format!("X: {:.2} Y: {:.2} Z: {:.2}", transform.translation.x, transform.translation.y, transform.translation.z));
                 // Velocity
                 ui.label(RichText::new("Velocity").size(16.0).underline());
-                ui.label(format!("{} km/s", velocity.0.length() / 10.0 * 1731.0));
+                ui.label(format!("{:.3} km/s", velocity.0.length() / 10.0 * 1731.0));
                 // Distance from Sun
                 ui.label(RichText::new("Distance from sun").size(16.0).underline());
                 let distance_in_au = transform.translation.distance(sun_pos) / 10.0;
                 ui.label(format!("{} km", (distance_in_au * 1.496e+8) as f64));
-                ui.label(format!("{} au", distance_in_au));
+                ui.label(format!("{:.3} au", distance_in_au));
                 ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
                     if ui.button("Delete").clicked() {
                         commands.entity(entity).despawn_recursive()

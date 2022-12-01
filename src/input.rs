@@ -1,6 +1,7 @@
 use bevy::{prelude::{ResMut, Res, Resource, Input, KeyCode, MouseButton, Plugin, CoreStage, IntoSystemDescriptor}, input::InputSystem};
 use bevy_egui::{EguiContext, EguiSystem};
 
+//Block input when hovering over egui interfaces
 
 #[derive(Default, Resource)]
 struct EguiBlockInputState {

@@ -28,7 +28,7 @@ fn spawn_lagrange_points(
 ) {
     let roboto: Handle<TextMeshFont> = assets.load("fonts/Roboto-Regular.ttf#mesh");
     let lagrange_points = vec![
-        (Name::new("SE-L1"), LagrangePoint(0.1)), 
+        (Name::new("SE-L1"), LagrangePoint(0.1)), //0.1u = 0.01AU
         (Name::new("SE-L2"), LagrangePoint(-0.1))
     ];
     for (name, point) in lagrange_points {
