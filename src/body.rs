@@ -1,4 +1,4 @@
-use crate::{camera::PanOrbitCamera, lagrange::calculate_lagrange_points};
+use crate::{camera::PanOrbitCamera, lagrange::calculate_lagrange_points, speed::Speed};
 use bevy::{
     prelude::{
         App, Bundle, Component, IntoSystemDescriptor, Mut, Name, Plugin, Query,
@@ -146,18 +146,19 @@ pub fn update_acceleration(
     }
 }
 
-pub fn update_velocity(mut query: Query<(&mut Velocity, &Acceleration)>, time: Res<Time>) {
+pub fn update_velocity(mut query: Query<(&mut Velocity, &Acceleration)>, time: Res<Time>, speed: Res<Speed>) {
     for (mut vel, acc) in query.iter_mut() {
-        vel.0 += acc.0 * time.delta_seconds();
+        vel.0 += acc.0 * time.delta_seconds() * speed.0;
     }
 }
 
 pub fn movement(
     mut query: Query<(&mut Transform, &Velocity)>,
     time: Res<Time>,
+    speed: Res<Speed>
 ) {
     for (mut transform, vel) in query.iter_mut() {
-        transform.translation += vel.0 * time.delta_seconds();
+        transform.translation += vel.0 * time.delta_seconds() * speed.0;
     }
 }
 

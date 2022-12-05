@@ -9,7 +9,8 @@ pub struct Body {
     pub body: BodyBundle,
     pub radius: f32,
     pub model_scale: f32,
-    pub name: String
+    pub name: String,
+    pub unlit: bool
 }
 
 impl Body {
@@ -28,7 +29,8 @@ impl Body {
                 ) * AU_TO_UNIT_SCALE
             ),
             model_scale: 0.00001,
-            name: "Earth".to_string()
+            name: "Earth".to_string(),
+            unlit: false
         }
     }
     
@@ -46,7 +48,8 @@ impl Body {
                 ) * AU_TO_UNIT_SCALE
             ),
             model_scale: 0.00001,
-            name: "Saturn".to_string()
+            name: "Saturn".to_string(),
+            unlit: false
         }
     }
     
@@ -64,7 +67,8 @@ impl Body {
                 ) * AU_TO_UNIT_SCALE
             ),
             model_scale: 0.00001,
-            name: "Jupiter".to_string()
+            name: "Jupiter".to_string(),
+            unlit: false
         }
     }
     
@@ -82,7 +86,8 @@ impl Body {
                 ) * AU_TO_UNIT_SCALE
             ),
             model_scale: 0.00001,
-            name: "Mars".to_string()
+            name: "Mars".to_string(),
+            unlit: false
         }
     }
     
@@ -100,7 +105,8 @@ impl Body {
                 ) * AU_TO_UNIT_SCALE
             ),
             model_scale: 0.00001,
-            name: "Uranus".to_string()
+            name: "Uranus".to_string(),
+            unlit: false
         }
     }
     
@@ -118,7 +124,8 @@ impl Body {
                 ) * AU_TO_UNIT_SCALE
             ),
             model_scale: 0.00001,
-            name: "Mercury".to_string()
+            name: "Mercury".to_string(),
+            unlit: false
         }
     }
     
@@ -136,7 +143,8 @@ impl Body {
                 ) * AU_TO_UNIT_SCALE
             ),
             model_scale: 0.00001,
-            name: "Venus".to_string()
+            name: "Venus".to_string(),
+            unlit: false
         }
     }
     
@@ -154,7 +162,8 @@ impl Body {
                 ) * AU_TO_UNIT_SCALE
             ),
             model_scale: 0.00001,
-            name: "Pluto".to_string()
+            name: "Pluto".to_string(),
+            unlit: false
         }
     }
     
@@ -172,7 +181,8 @@ impl Body {
                 ) * AU_TO_UNIT_SCALE
             ),
             model_scale: 0.000003,
-            name: "Moon".to_string()
+            name: "Moon".to_string(),
+            unlit: false
         }
     }
     
@@ -189,8 +199,9 @@ impl Body {
                 -1.564139006806661E-02, 7.940335006606503E-03, -9.026475694712961E-05
                 ) * AU_TO_UNIT_SCALE
             ),
-            model_scale: 0.000003,
-            name: "JWST".to_string()
+            model_scale: 0.0003,
+            name: "JWST".to_string(),
+            unlit: true
         }
     }
     
@@ -208,7 +219,8 @@ impl Body {
                 ) * AU_TO_UNIT_SCALE
             ),
             model_scale: 0.000003,
-            name: "ISS".to_string()
+            name: "ISS".to_string(),
+            unlit: false
         }
     }
     
@@ -226,7 +238,8 @@ impl Body {
                 ) * AU_TO_UNIT_SCALE
             ),
             model_scale: 0.000003,
-            name: "Hubble".to_string()
+            name: "Hubble".to_string(),
+            unlit: false
         }
     }
     

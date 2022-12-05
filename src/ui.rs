@@ -4,7 +4,7 @@ use bevy_inspector_egui::{egui::{TextEdit, RichText}, Inspectable, RegisterInspe
 use bevy_mod_picking::Selection;
 use chrono::{NaiveDate, Days};
 
-use crate::{body::{Mass, Velocity, Acceleration, movement}, input::BlockInputPlugin, lagrange::LagrangePoint, skybox::{CubemapMaterial, Skybox}};
+use crate::{body::{Mass, Velocity, Acceleration, movement}, input::BlockInputPlugin, lagrange::LagrangePoint, skybox::{CubemapMaterial, Skybox}, speed::Speed};
 
 #[derive(Resource, Inspectable, Default)]
 pub struct SimTime(f32);
@@ -28,13 +28,28 @@ pub fn time_ui(
    time: Res<Time>,
    mut sim_time: ResMut<SimTime>,
    mut egui_context: ResMut<EguiContext>,
+   mut speed: ResMut<Speed>
 ) {
-    sim_time.0 += time.delta_seconds();
+    sim_time.0 += time.delta_seconds() * speed.0;
     let date = NaiveDate::from_ymd_opt(2022, 11, 25).unwrap().checked_add_days(Days::new(sim_time.0.round() as u64)).unwrap();
     egui::TopBottomPanel::bottom("time_panel")
     .resizable(false)
     .show(egui_context.ctx_mut(), |ui| {
-        ui.label(format!("{}", date.format("%d.%m.%Y")));
+        ui.horizontal(|ui| {
+            if ui.small_button("<<").clicked() {
+                speed.0 /= 10.0;
+            }
+            if ui.small_button("<").clicked() {
+                speed.0 /= 2.0;
+            }
+            ui.label(format!("{}", date.format("%d.%m.%Y")));
+            if ui.small_button(">").clicked() {
+                speed.0 *= 2.0;
+            }
+            if ui.small_button(">>").clicked() {
+                speed.0 *= 10.0;
+            }
+        });
     });
 }
 
@@ -43,7 +58,7 @@ pub fn system_ui(
     mut body_query: Query<(&Name, &mut Selection, &mut Visibility, Without<LagrangePoint>)>,
     mut lagrange_point_query: Query<(&Name, &mut Selection, &mut Visibility, With<LagrangePoint>)>,
     mut skybox: Query<(&mut Visibility, &Skybox, Without<LagrangePoint>, Without<Selection>, Without<Name>)>,
-    mut camera: Query<(&mut Camera)>
+    mut camera: Query<&mut Camera>
 ) {
     let mut points: Vec<(&Name, Mut<Selection>)> = Vec::new();
     let mut selected_body: Option<&str> = None;

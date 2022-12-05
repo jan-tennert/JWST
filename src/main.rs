@@ -6,6 +6,7 @@ mod lagrange;
 mod lines;
 mod bodies;
 mod skybox;
+mod speed;
 
 
 use crate::bodies::Body;
@@ -21,6 +22,7 @@ use bevy_mod_picking::{DefaultPickingPlugins, PickableBundle, PickingCameraBundl
 use body::{Gravity, BodyPlugin};
 use lagrange::LagrangePlugin;
 use skybox::SkyboxPlugin;
+use speed::SpeedPlugin;
 use ui::UIPlugin;
 
 
@@ -41,6 +43,7 @@ fn main() {
         .add_plugin(UIPlugin)
         .add_plugin(LagrangePlugin)
         .add_plugin(SkyboxPlugin)
+        .add_plugin(SpeedPlugin)
         .add_plugin(LogDiagnosticsPlugin::default())
         .add_plugin(FrameTimeDiagnosticsPlugin::default())
      //   .add_plugin(LinePlugin)
@@ -57,7 +60,7 @@ fn setup(
 ) {
 //    let jwst: Handle<Scene> = assets.load("jwst.glb#Scene0");
   //  let hubble = assets.load("hubble.glb#Scene0");
-    let bodies = vec![Body::earth(), Body::moon(), Body::saturn(), Body::venus(), Body::pluto(), Body::mercury(), Body::jupiter(), Body::mars(), Body::uranus(), Body::iss()];
+    let bodies = vec![Body::earth(), Body::moon(), Body::saturn(), Body::venus(), Body::pluto(), Body::mercury(), Body::jupiter(), Body::mars(), Body::uranus(), Body::jwst()];
     
     const DAY: f32 = 86_400.0;
       
