@@ -1,8 +1,8 @@
-use crate::{camera::PanOrbitCamera, lagrange::calculate_lagrange_points, speed::Speed};
+use crate::{camera::PanOrbitCamera, lagrange::calculate_lagrange_points, speed::Speed, jwst::{JWST, orbit_around_l2}};
 use bevy::{
     prelude::{
         App, Bundle, Component, IntoSystemDescriptor, Mut, Name, Plugin, Query,
-        Res, Resource, SystemLabel, SystemSet, Transform, Vec3, Deref
+        Res, Resource, SystemLabel, SystemSet, Transform, Vec3, Deref, Without
     },
     time::Time,
 };
@@ -90,7 +90,7 @@ impl Plugin for BodyPlugin {
             .register_inspectable::<Acceleration>()
             .register_inspectable::<BodyBundle>()
             .register_inspectable::<Lines>()
-            .add_system(body_focus.after(calculate_lagrange_points))
+            .add_system(body_focus.after(orbit_around_l2))
             .add_system_set(
                 SystemSet::new()
              //       .with_run_criteria(FixedTimestep::steps_per_second(100.0 as f64))
@@ -123,10 +123,10 @@ impl Plugin for BodyPlugin {
 /// - `r` is the distance between the centers of their masses
 pub fn update_acceleration(
     g: Res<Gravity>,
-    mut query: Query<(&Mass, &Transform, &mut Acceleration)>,
+    mut query: Query<(&Mass, &Transform, &mut Acceleration, Without<JWST>)>,
 ) {
     let mut bodies: Vec<(&Mass, &Transform, Mut<Acceleration>)> = Vec::new();
-    for (mass, transform, mut acc) in query.iter_mut() {
+    for (mass, transform, mut acc, _) in query.iter_mut() {
         acc.0 = Vec3::ZERO;
         for (other_mass, other_pos, other_acc) in bodies.iter_mut() {
             let diff = other_pos.translation - transform.translation;
@@ -146,18 +146,18 @@ pub fn update_acceleration(
     }
 }
 
-pub fn update_velocity(mut query: Query<(&mut Velocity, &Acceleration)>, time: Res<Time>, speed: Res<Speed>) {
-    for (mut vel, acc) in query.iter_mut() {
+pub fn update_velocity(mut query: Query<(&mut Velocity, &Acceleration, Without<JWST>)>, time: Res<Time>, speed: Res<Speed>) {
+    for (mut vel, acc, _) in query.iter_mut() {
         vel.0 += acc.0 * time.delta_seconds() * speed.0;
     }
 }
 
 pub fn movement(
-    mut query: Query<(&mut Transform, &Velocity)>,
+    mut query: Query<(&mut Transform, &Velocity, Without<JWST>)>,
     time: Res<Time>,
     speed: Res<Speed>
 ) {
-    for (mut transform, vel) in query.iter_mut() {
+    for (mut transform, vel, _) in query.iter_mut() {
         transform.translation += vel.0 * time.delta_seconds() * speed.0;
     }
 }

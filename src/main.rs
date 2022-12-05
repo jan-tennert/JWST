@@ -7,11 +7,14 @@ mod lines;
 mod bodies;
 mod skybox;
 mod speed;
+mod fps;
+mod jwst;
 
 
 use crate::bodies::Body;
 use crate::body::BodyBundle;
 use crate::camera::*;
+use crate::lines::*;
 use bevy::core_pipeline::{clear_color::ClearColorConfig, bloom::BloomSettings};
 use bevy::diagnostic::{LogDiagnosticsPlugin, FrameTimeDiagnosticsPlugin};
 use bevy::pbr::NotShadowCaster;
@@ -20,6 +23,8 @@ use bevy::render::view::NoFrustumCulling;
 use bevy_inspector_egui::WorldInspectorPlugin;
 use bevy_mod_picking::{DefaultPickingPlugins, PickableBundle, PickingCameraBundle};
 use body::{Gravity, BodyPlugin};
+use fps::FpsPlugin;
+use jwst::JWSTPlugin;
 use lagrange::LagrangePlugin;
 use skybox::SkyboxPlugin;
 use speed::SpeedPlugin;
@@ -44,9 +49,11 @@ fn main() {
         .add_plugin(LagrangePlugin)
         .add_plugin(SkyboxPlugin)
         .add_plugin(SpeedPlugin)
+        .add_plugin(FpsPlugin)
+        .add_plugin(JWSTPlugin)
         .add_plugin(LogDiagnosticsPlugin::default())
         .add_plugin(FrameTimeDiagnosticsPlugin::default())
-     //   .add_plugin(LinePlugin)
+      //  .add_plugin(LinePlugin)
         .add_startup_system(setup)
         .run();
 }
@@ -60,7 +67,7 @@ fn setup(
 ) {
 //    let jwst: Handle<Scene> = assets.load("jwst.glb#Scene0");
   //  let hubble = assets.load("hubble.glb#Scene0");
-    let bodies = vec![Body::earth(), Body::moon(), Body::saturn(), Body::venus(), Body::pluto(), Body::mercury(), Body::jupiter(), Body::mars(), Body::uranus(), Body::jwst()];
+    let bodies = vec![Body::earth(), Body::moon(), Body::saturn(), Body::venus(), Body::pluto(), Body::mercury(), Body::jupiter(), Body::mars(), Body::uranus()];
     
     const DAY: f32 = 86_400.0;
       

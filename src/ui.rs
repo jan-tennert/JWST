@@ -1,10 +1,10 @@
-use bevy::{prelude::{Plugin, App, Name, Query, ResMut, Mut, Entity, Commands, DespawnRecursiveExt, Transform, Vec3, Res, Resource, IntoSystemDescriptor, ParamSet, Visibility, Without, With, MaterialMeshBundle, Camera}, time::Time};
+use bevy::{prelude::{Plugin, App, Name, Query, ResMut, Mut, Entity, Commands, DespawnRecursiveExt, Transform, Vec3, Res, Resource, IntoSystemDescriptor, ParamSet, Visibility, Without, With, MaterialMeshBundle, Camera}, time::Time, diagnostic::{Diagnostic, Diagnostics, FrameTimeDiagnosticsPlugin}, render::FrameCountPlugin};
 use bevy_egui::*;
 use bevy_inspector_egui::{egui::{TextEdit, RichText}, Inspectable, RegisterInspectable};
 use bevy_mod_picking::Selection;
 use chrono::{NaiveDate, Days};
 
-use crate::{body::{Mass, Velocity, Acceleration, movement}, input::BlockInputPlugin, lagrange::LagrangePoint, skybox::{CubemapMaterial, Skybox}, speed::Speed};
+use crate::{body::{Mass, Velocity, Acceleration, movement}, input::BlockInputPlugin, lagrange::LagrangePoint, skybox::{CubemapMaterial, Skybox}, speed::Speed, fps::Fps};
 
 #[derive(Resource, Inspectable, Default)]
 pub struct SimTime(f32);
@@ -28,7 +28,8 @@ pub fn time_ui(
    time: Res<Time>,
    mut sim_time: ResMut<SimTime>,
    mut egui_context: ResMut<EguiContext>,
-   mut speed: ResMut<Speed>
+   mut speed: ResMut<Speed>,
+   fps: Res<Fps>
 ) {
     sim_time.0 += time.delta_seconds() * speed.0;
     let date = NaiveDate::from_ymd_opt(2022, 11, 25).unwrap().checked_add_days(Days::new(sim_time.0.round() as u64)).unwrap();
@@ -42,13 +43,17 @@ pub fn time_ui(
             if ui.small_button("<").clicked() {
                 speed.0 /= 2.0;
             }
-            ui.label(format!("{}", date.format("%d.%m.%Y")));
+            let e = if speed.0 == 1.0 {""} else {"e"};
+            ui.label(format!("{} ({} Tag{} / s)", date.format("%d.%m.%Y"), speed.0, e));
             if ui.small_button(">").clicked() {
                 speed.0 *= 2.0;
             }
             if ui.small_button(">>").clicked() {
                 speed.0 *= 10.0;
             }
+        });
+        ui.with_layout(egui::Layout::bottom_up(egui::Align::RIGHT), |ui| {
+            ui.label(format!("{:.0} FPS", fps.0));   
         });
     });
 }

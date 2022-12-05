@@ -7,7 +7,7 @@ use ringbuffer::{ConstGenericRingBuffer, RingBufferExt, RingBufferWrite};
 
 use crate::body::{movement, EnableLines};
 
-pub const TRAIL_LENGTH: usize = 1024;
+pub const TRAIL_LENGTH: usize = 1024 * 5;
 const MINIMUM_ANGLE: f32 = 1.48341872;
 
 #[derive(Component, Clone, Default, Debug)]
