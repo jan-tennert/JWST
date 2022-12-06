@@ -1,13 +1,20 @@
-use bevy::{prelude::{Plugin, App, Name, Query, ResMut, Mut, Entity, Commands, DespawnRecursiveExt, Transform, Vec3, Res, Resource, IntoSystemDescriptor, ParamSet, Visibility, Without, With, MaterialMeshBundle, Camera}, time::Time, diagnostic::{Diagnostic, Diagnostics, FrameTimeDiagnosticsPlugin}, render::FrameCountPlugin};
+use bevy::{prelude::{Plugin, App, Name, Query, ResMut, Mut, Entity, Commands, DespawnRecursiveExt, Transform, Vec3, Res, Resource, IntoSystemDescriptor, ParamSet, Visibility, Without, With, MaterialMeshBundle, Camera, SystemSet, PointLight}, time::Time, diagnostic::{Diagnostic, Diagnostics, FrameTimeDiagnosticsPlugin}, render::FrameCountPlugin};
 use bevy_egui::*;
 use bevy_inspector_egui::{egui::{TextEdit, RichText}, Inspectable, RegisterInspectable};
 use bevy_mod_picking::Selection;
 use chrono::{NaiveDate, Days};
 
-use crate::{body::{Mass, Velocity, Acceleration, movement}, input::BlockInputPlugin, lagrange::LagrangePoint, skybox::{CubemapMaterial, Skybox}, speed::Speed, fps::Fps};
+use crate::{body::{Mass, Velocity, Acceleration, update_bodies}, input::BlockInputPlugin, lagrange::LagrangePoint, skybox::{CubemapMaterial, Skybox}, speed::Speed, fps::Fps, SimState};
 
 #[derive(Resource, Inspectable, Default)]
 pub struct SimTime(f32);
+
+#[derive(Resource, Inspectable, Default)]
+pub struct Light {
+    
+    pub shadows_enabled: bool
+    
+}
 
 pub struct UIPlugin;
 
@@ -18,9 +25,9 @@ impl Plugin for UIPlugin {
         .register_inspectable::<SimTime>()
         .init_resource::<SimTime>()
         .add_plugin(BlockInputPlugin)
-        .add_system(system_ui.after(time_ui))
-        .add_system(body_ui.after(movement))
-        .add_system(time_ui.after(body_ui));
+        .add_system_set(SystemSet::on_update(SimState::Simulation).with_system(system_ui.after(time_ui)))
+        .add_system_set(SystemSet::on_update(SimState::Simulation).with_system(body_ui.after(update_bodies)))
+        .add_system_set(SystemSet::on_update(SimState::Simulation).with_system(time_ui.after(body_ui)));
     }
 }
 
@@ -63,7 +70,8 @@ pub fn system_ui(
     mut body_query: Query<(&Name, &mut Selection, &mut Visibility, Without<LagrangePoint>)>,
     mut lagrange_point_query: Query<(&Name, &mut Selection, &mut Visibility, With<LagrangePoint>)>,
     mut skybox: Query<(&mut Visibility, &Skybox, Without<LagrangePoint>, Without<Selection>, Without<Name>)>,
-    mut camera: Query<&mut Camera>
+    mut camera: Query<&mut Camera>,
+    mut light: Query<&mut PointLight>
 ) {
     let mut points: Vec<(&Name, Mut<Selection>)> = Vec::new();
     let mut selected_body: Option<&str> = None;
@@ -100,6 +108,9 @@ pub fn system_ui(
         }
         if let Ok(mut camera) = camera.get_single_mut() {
             ui.checkbox(&mut camera.hdr, "HDR/Bloom");
+        }
+        if let Ok(mut light) = light.get_single_mut() {
+            ui.checkbox(&mut light.shadows_enabled, "Shadows");
         }
     });
     if let Some(selected_name) = selected_body {

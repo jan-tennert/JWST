@@ -19,6 +19,8 @@ use bevy::{
     },
 };
 
+use crate::SimState;
+
 pub struct SkyboxPlugin;
 
 impl Plugin for SkyboxPlugin {

@@ -1,4 +1,4 @@
-use crate::{camera::PanOrbitCamera, lagrange::calculate_lagrange_points, speed::Speed, jwst::{JWST, orbit_around_l2}};
+use crate::{camera::PanOrbitCamera, lagrange::calculate_lagrange_points, speed::Speed, jwst::{JWST, orbit_around_l2}, SimState};
 use bevy::{
     prelude::{
         App, Bundle, Component, IntoSystemDescriptor, Mut, Name, Plugin, Query,
@@ -10,13 +10,6 @@ use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 use bevy_mod_picking::Selection;
 
 pub const G: f32 = 6.67430e-11_f32; //gravitational constant
-
-#[derive(Debug, Hash, PartialEq, Eq, Clone, SystemLabel)]
-pub enum PhysicsSystem {
-    UpdateAcceleration,
-    UpdateVelocity,
-    Movement,
-}
 
 #[derive(Resource, Inspectable)]
 pub struct Gravity(pub f32);
@@ -90,43 +83,19 @@ impl Plugin for BodyPlugin {
             .register_inspectable::<Acceleration>()
             .register_inspectable::<BodyBundle>()
             .register_inspectable::<Lines>()
-            .add_system(body_focus.after(orbit_around_l2))
-            .add_system_set(
-                SystemSet::new()
-             //       .with_run_criteria(FixedTimestep::steps_per_second(100.0 as f64))
-                    .with_system(update_acceleration.label(PhysicsSystem::UpdateAcceleration))
-                    .with_system(
-                        update_velocity
-                            .label(PhysicsSystem::UpdateVelocity)
-                            .after(PhysicsSystem::UpdateAcceleration),
-                    )
-                    .with_system(
-                        movement
-                            .label(PhysicsSystem::Movement)
-                            .after(PhysicsSystem::UpdateVelocity),
-                    )
-                    /*.with_system(
-                        body_focus.after(PhysicsSystem::Movement)
-                    )*/,
-            );
+            .add_system_set(SystemSet::on_update(SimState::Simulation).with_system(body_focus.after(orbit_around_l2)))
+            .add_system_set(SystemSet::on_update(SimState::Simulation).with_system(update_bodies));
     }
 }
 
-///
-/// ```
-/// F = G*m1*m2/r^2
-/// ```
-///
-/// - `F` is the gravitational force acting between two objects
-/// - `G` is the gravitational constant
-/// - `m1` and `m2` are the masses of the objects
-/// - `r` is the distance between the centers of their masses
-pub fn update_acceleration(
+pub fn update_bodies(
     g: Res<Gravity>,
-    mut query: Query<(&Mass, &Transform, &mut Acceleration, Without<JWST>)>,
+    mut query: Query<(&Name, &Mass, &mut Transform, &mut Acceleration, &mut Velocity, Without<JWST>)>,
+    time: Res<Time>,
+    speed: Res<Speed>
 ) {
-    let mut bodies: Vec<(&Mass, &Transform, Mut<Acceleration>)> = Vec::new();
-    for (mass, transform, mut acc, _) in query.iter_mut() {
+    let mut bodies: Vec<(&Mass, Mut<Transform>, Mut<Acceleration>)> = Vec::new();
+    for (_, mass, transform, mut acc, _, _) in query.iter_mut() {
         acc.0 = Vec3::ZERO;
         for (other_mass, other_pos, other_acc) in bodies.iter_mut() {
             let diff = other_pos.translation - transform.translation;
@@ -139,25 +108,9 @@ pub fn update_acceleration(
         }
         bodies.push((mass, transform, acc));
     }
-
-    //`F = ma => a = F/m`
-    for (mass, _, acc) in bodies.iter_mut() {
+    for (_m, mass, mut transform, mut acc, mut vel, _) in query.iter_mut() {
         acc.0 /= mass.0;
-    }
-}
-
-pub fn update_velocity(mut query: Query<(&mut Velocity, &Acceleration, Without<JWST>)>, time: Res<Time>, speed: Res<Speed>) {
-    for (mut vel, acc, _) in query.iter_mut() {
         vel.0 += acc.0 * time.delta_seconds() * speed.0;
-    }
-}
-
-pub fn movement(
-    mut query: Query<(&mut Transform, &Velocity, Without<JWST>)>,
-    time: Res<Time>,
-    speed: Res<Speed>
-) {
-    for (mut transform, vel, _) in query.iter_mut() {
         transform.translation += vel.0 * time.delta_seconds() * speed.0;
     }
 }

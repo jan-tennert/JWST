@@ -1,9 +1,9 @@
-use bevy::prelude::{Plugin, Query, Name, Transform, Vec3, Commands, Handle, Res, AssetServer, Color, Component, ParamSet, IntoSystemDescriptor, ResMut, Assets, StandardMaterial, AlphaMode, Visibility};
+use bevy::prelude::{Plugin, Query, Name, Transform, Vec3, Commands, Handle, Res, AssetServer, Color, Component, ParamSet, IntoSystemDescriptor, ResMut, Assets, StandardMaterial, AlphaMode, Visibility, SystemSet};
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 use bevy_mod_picking::PickableBundle;
 use bevy_text_mesh::{TextMeshFont, TextMeshPlugin, TextMeshBundle, TextMesh, TextMeshStyle, TextMeshSize, SizeUnit};
 
-use crate::{body::movement, camera::PanOrbitCamera};
+use crate::{body::update_bodies, camera::PanOrbitCamera, SimState};
 
 pub struct LagrangePlugin;
 
@@ -16,8 +16,8 @@ impl Plugin for LagrangePlugin {
         app
         .register_inspectable::<LagrangePoint>()
         .add_plugin(TextMeshPlugin)
-        .add_startup_system(spawn_lagrange_points)
-        .add_system(calculate_lagrange_points.after(movement));
+        .add_system_set(SystemSet::on_enter(SimState::Simulation).with_system(spawn_lagrange_points))
+        .add_system_set(SystemSet::on_update(SimState::Simulation).with_system(calculate_lagrange_points.after(update_bodies)));
     }
     
 }

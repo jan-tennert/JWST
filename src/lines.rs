@@ -1,11 +1,8 @@
-use std::time::Duration;
-
 use bevy::{prelude::{Component, Plugin, Commands, ResMut, Assets, Query, Transform, Handle, IntoSystemDescriptor, Vec3}, time::{Timer, TimerMode}, math::Vec3A};
-use bevy_inspector_egui::{RegisterInspectable, Inspectable};
 use bevy_polyline::{prelude::Polyline, PolylinePlugin};
 use ringbuffer::{ConstGenericRingBuffer, RingBufferExt, RingBufferWrite};
 
-use crate::body::{movement, EnableLines};
+use crate::body::{EnableLines, update_bodies};
 
 pub const TRAIL_LENGTH: usize = 1024 * 5;
 const MINIMUM_ANGLE: f32 = 1.48341872;
@@ -20,7 +17,7 @@ impl Plugin for LinePlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app
         .add_plugin(PolylinePlugin)
-        .add_system(update_trails.after(movement));
+        .add_system(update_trails.after(update_bodies));
     }
     
 }

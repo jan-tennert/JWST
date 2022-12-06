@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy_mod_picking::PickableBundle;
 
-use crate::{setup, lagrange::{LagrangePoint, calculate_lagrange_points}, bodies::Body, body::body_focus};
+use crate::{menu::setup, lagrange::{LagrangePoint, calculate_lagrange_points}, bodies::Body, body::body_focus, SimState};
 
 pub struct JWSTPlugin;
 
@@ -9,8 +9,8 @@ impl Plugin for JWSTPlugin {
     
     fn build(&self, app: &mut App) {
         app
-        .add_startup_system(setup_jwst.after(setup))
-        .add_system(orbit_around_l2.after(calculate_lagrange_points));
+        .add_system_set(SystemSet::on_enter(SimState::Simulation).with_system(setup_jwst.after(setup)))
+        .add_system_set(SystemSet::on_update(SimState::Simulation).with_system(orbit_around_l2.after(calculate_lagrange_points)));
     }
     
 }

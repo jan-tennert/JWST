@@ -3,33 +3,39 @@ mod camera;
 mod ui;
 mod input;
 mod lagrange;
-mod lines;
 mod bodies;
 mod skybox;
 mod speed;
 mod fps;
+mod menu;
 mod jwst;
 
 
 use crate::bodies::Body;
 use crate::body::BodyBundle;
 use crate::camera::*;
-use crate::lines::*;
 use bevy::core_pipeline::{clear_color::ClearColorConfig, bloom::BloomSettings};
 use bevy::diagnostic::{LogDiagnosticsPlugin, FrameTimeDiagnosticsPlugin};
 use bevy::pbr::NotShadowCaster;
 use bevy::prelude::*;
 use bevy::render::view::NoFrustumCulling;
+use bevy_egui::EguiPlugin;
 use bevy_inspector_egui::WorldInspectorPlugin;
 use bevy_mod_picking::{DefaultPickingPlugins, PickableBundle, PickingCameraBundle};
 use body::{Gravity, BodyPlugin};
 use fps::FpsPlugin;
 use jwst::JWSTPlugin;
 use lagrange::LagrangePlugin;
+use menu::MenuPlugin;
 use skybox::SkyboxPlugin;
 use speed::SpeedPlugin;
 use ui::UIPlugin;
 
+#[derive(Clone, Eq, PartialEq, Debug, Hash)]
+pub enum SimState {
+    Menu,
+    Simulation   
+}
 
 fn main() {
     App::new()
@@ -42,6 +48,7 @@ fn main() {
             ..default()
         }))
         .add_plugin(WorldInspectorPlugin::new())
+     //   .add_plugin(EguiPlugin)
         .add_plugins(DefaultPickingPlugins)
         .add_plugin(PanOrbitCameraPlugin)
         .add_plugin(BodyPlugin)
@@ -51,28 +58,28 @@ fn main() {
         .add_plugin(SpeedPlugin)
         .add_plugin(FpsPlugin)
         .add_plugin(JWSTPlugin)
+        .add_plugin(MenuPlugin)
         .add_plugin(LogDiagnosticsPlugin::default())
         .add_plugin(FrameTimeDiagnosticsPlugin::default())
+        .add_state(SimState::Menu)
       //  .add_plugin(LinePlugin)
-        .add_startup_system(setup)
+        .add_system_set(SystemSet::on_enter(SimState::Simulation).with_system(sim_setup))
         .run();
 }
 
 //mass scaled in 10^24 kg m
-fn setup(
+fn sim_setup(
     mut commands: Commands,
     assets: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut g: ResMut<Gravity>,
 ) {
-//    let jwst: Handle<Scene> = assets.load("jwst.glb#Scene0");
-  //  let hubble = assets.load("hubble.glb#Scene0");
     let bodies = vec![Body::earth(), Body::moon(), Body::saturn(), Body::venus(), Body::pluto(), Body::mercury(), Body::jupiter(), Body::mars(), Body::uranus()];
     
-    const DAY: f32 = 86_400.0;
+    const TIME: f32 = 3600.0 * 24.0;
       
-    g.0 *= DAY * DAY * 10.0f32.powi(-6) / 1.5f32.powi(3);      
-                                    
+    g.0 *= f32::powf(TIME, 2.0) * 10.0f32.powi(-6) / 1.5f32.powi(3);  
+
     let sun_body = BodyBundle::new(1_988_500.0, Vec3::ZERO, Vec3::ZERO);
     commands
         .spawn(SpatialBundle::from_transform(Transform::from_xyz(
@@ -86,7 +93,7 @@ fn setup(
         .insert(PointLightBundle {
             point_light: PointLight {
                 intensity: 10000.0,
-                shadows_enabled: true,
+                shadows_enabled: false,
                 range: 600.0,
                 radius: 0.6,
                 ..default()
@@ -121,30 +128,4 @@ fn setup(
             ));
         });
     }               
-
-    let translation = Vec3::new(-2.0, 2.5, 5.0);
-    let radius = translation.length();
-
-    //camera
-    commands.spawn((
-        Camera3dBundle {
-            projection: Projection::Perspective(PerspectiveProjection { near: 0.0001, ..default() }),
-            transform: Transform::from_translation(translation).looking_at(Vec3::ZERO, Vec3::Y),
-            camera_3d: Camera3d {
-                clear_color: ClearColorConfig::Custom(Color::BLACK),
-                ..default()
-            },
-            camera: Camera {
-                hdr: true,
-                ..default()   
-            },
-            ..Default::default()
-        },
-        BloomSettings { threshold: 0.5, ..default() },
-        PanOrbitCamera {
-            radius,
-            ..Default::default()
-        },
-        PickingCameraBundle::default(),
-    ));
 }
