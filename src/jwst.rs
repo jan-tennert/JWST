@@ -1,7 +1,7 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, render::view::NoFrustumCulling};
 use bevy_mod_picking::PickableBundle;
 
-use crate::{menu::setup, lagrange::{LagrangePoint, calculate_lagrange_points}, bodies::Body, body::body_focus, SimState};
+use crate::{menu::setup, lagrange::{LagrangePoint, calculate_lagrange_points}, bodies::Body, body::{body_focus, Sun, Pause}, SimState, speed::Speed};
 
 pub struct JWSTPlugin;
 
@@ -41,18 +41,26 @@ fn setup_jwst(mut commands: Commands, assets: Res<AssetServer>, mut meshes: ResM
 
 pub fn orbit_around_l2(
     mut jwst: Query<(&mut Transform, &JWST, Without<LagrangePoint>)>,
+    sun: Query<(&Transform, &Sun, Without<LagrangePoint>, Without<JWST>)>,
     lagrange_points: Query<(&LagrangePoint, &Name, &Transform)>,
-    time: Res<Time>
+    time: Res<Time>,
+    speed: Res<Speed>,
+    pause: Res<Pause>
 ) {
     for (_, name, center) in lagrange_points.iter() {
-        if name.as_str() == "SE-L2" {
+        if name.as_str() == "SE-L2" && !pause.0 {
                 if let Ok(result) = jwst.get_single_mut() {
-                let mut transform = result.0;
-                let angle = 0.1 * time.elapsed_seconds() as f32;
-                let x = 0.01 * angle.cos();
-                let y = 0.01 * angle.sin();
-                transform.translation = center.translation + Vec3::new(x, y, 0.0);
-               // transform.rotation = Quat::from_rotation_x(angle) * Quat::from_rotation_y(angle);
+                    if let Ok(sun) = sun.get_single() {
+                        let mut jwst = result.0;
+                        let sun_location = sun.0.translation;
+                        let angle = time.elapsed_seconds() * speed.0;
+                        // update the position of the entity based on the orbit radius and angle
+                        jwst.translation = center.translation + Vec3::new(
+                            0.02 * angle.cos(),
+                            0.02 * angle.sin(),
+                            0.0,
+                        );   
+                    }
             }
         }
     }

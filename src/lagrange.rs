@@ -1,7 +1,7 @@
 use bevy::prelude::{Plugin, Query, Name, Transform, Vec3, Commands, Handle, Res, AssetServer, Color, Component, ParamSet, IntoSystemDescriptor, ResMut, Assets, StandardMaterial, AlphaMode, Visibility, SystemSet};
 use bevy_inspector_egui::{Inspectable, RegisterInspectable};
 use bevy_mod_picking::PickableBundle;
-use bevy_text_mesh::{TextMeshFont, TextMeshPlugin, TextMeshBundle, TextMesh, TextMeshStyle, TextMeshSize, SizeUnit};
+use bevy_text_mesh::{TextMeshFont, TextMeshPlugin, TextMeshBundle, TextMesh, TextMeshStyle, TextMeshSize, SizeUnit, Quality};
 
 use crate::{body::update_bodies, camera::PanOrbitCamera, SimState};
 
@@ -39,6 +39,7 @@ fn spawn_lagrange_points(
                     color: Color::WHITE,
                     font: roboto.clone(),
                     font_size: SizeUnit::NonStandard(0.5),
+                    mesh_quality: Quality::Low,
                     ..Default::default()
                 },
                 ..Default::default()

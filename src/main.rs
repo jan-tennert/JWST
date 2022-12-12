@@ -9,16 +9,21 @@ mod speed;
 mod fps;
 mod menu;
 mod jwst;
+mod reset;
 
+
+use std::time::Duration;
 
 use crate::bodies::Body;
-use crate::body::BodyBundle;
+use crate::body::{BodyBundle, Sun};
 use crate::camera::*;
+use bevy::app::{ScheduleRunnerSettings, RunMode};
 use bevy::core_pipeline::{clear_color::ClearColorConfig, bloom::BloomSettings};
 use bevy::diagnostic::{LogDiagnosticsPlugin, FrameTimeDiagnosticsPlugin};
 use bevy::pbr::NotShadowCaster;
 use bevy::prelude::*;
 use bevy::render::view::NoFrustumCulling;
+use bevy::window::PresentMode;
 use bevy_egui::EguiPlugin;
 use bevy_inspector_egui::WorldInspectorPlugin;
 use bevy_mod_picking::{DefaultPickingPlugins, PickableBundle, PickingCameraBundle};
@@ -27,6 +32,7 @@ use fps::FpsPlugin;
 use jwst::JWSTPlugin;
 use lagrange::LagrangePlugin;
 use menu::MenuPlugin;
+use reset::ResetPlugin;
 use skybox::SkyboxPlugin;
 use speed::SpeedPlugin;
 use ui::UIPlugin;
@@ -34,15 +40,19 @@ use ui::UIPlugin;
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub enum SimState {
     Menu,
-    Simulation   
+    Simulation,
+    Reset,
+    ExitToMainMenu   
 }
 
 fn main() {
     App::new()
+        .insert_resource(Msaa { samples: 4 })
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             window: WindowDescriptor {
                 title: "James Webb Space Telescope GFS Physik".to_string(),
                 resizable: true,
+                present_mode: PresentMode::AutoVsync,
                 ..Default::default()
             },
             ..default()
@@ -59,7 +69,8 @@ fn main() {
         .add_plugin(FpsPlugin)
         .add_plugin(JWSTPlugin)
         .add_plugin(MenuPlugin)
-        .add_plugin(LogDiagnosticsPlugin::default())
+        .add_plugin(ResetPlugin)
+      //  .add_plugin(LogDiagnosticsPlugin::default())
         .add_plugin(FrameTimeDiagnosticsPlugin::default())
         .add_state(SimState::Menu)
       //  .add_plugin(LinePlugin)
@@ -74,11 +85,7 @@ fn sim_setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut g: ResMut<Gravity>,
 ) {
-    let bodies = vec![Body::earth(), Body::moon(), Body::saturn(), Body::venus(), Body::pluto(), Body::mercury(), Body::jupiter(), Body::mars(), Body::uranus()];
-    
-    const TIME: f32 = 3600.0 * 24.0;
-      
-    g.0 *= f32::powf(TIME, 2.0) * 10.0f32.powi(-6) / 1.5f32.powi(3);  
+    let bodies = vec![Body::earth(), Body::moon()/*, Body::saturn(), Body::venus(), Body::pluto(), Body::mercury(), Body::jupiter(), Body::mars(), Body::uranus()*/];
 
     let sun_body = BodyBundle::new(1_988_500.0, Vec3::ZERO, Vec3::ZERO);
     commands
@@ -101,6 +108,7 @@ fn sim_setup(
             ..default()
         })
         .insert(NoFrustumCulling)
+        .insert(Sun)
         .with_children(|commands| {
             commands.spawn(SceneBundle {
                 scene: assets.load("models/sun.glb#Scene0"),

@@ -1,13 +1,13 @@
-use bevy::{prelude::{Plugin, App, Name, Query, ResMut, Mut, Entity, Commands, DespawnRecursiveExt, Transform, Vec3, Res, Resource, IntoSystemDescriptor, ParamSet, Visibility, Without, With, MaterialMeshBundle, Camera, SystemSet, PointLight}, time::Time, diagnostic::{Diagnostic, Diagnostics, FrameTimeDiagnosticsPlugin}, render::FrameCountPlugin};
+use bevy::{prelude::{Plugin, App, Name, Query, ResMut, Mut, Entity, Commands, DespawnRecursiveExt, Transform, Vec3, Res, Resource, IntoSystemDescriptor, ParamSet, Visibility, Without, With, MaterialMeshBundle, Camera, SystemSet, PointLight, Input, KeyCode, State}, time::Time, diagnostic::{Diagnostic, Diagnostics, FrameTimeDiagnosticsPlugin}, render::FrameCountPlugin, window::{Windows, PresentMode}};
 use bevy_egui::*;
 use bevy_inspector_egui::{egui::{TextEdit, RichText}, Inspectable, RegisterInspectable};
 use bevy_mod_picking::Selection;
 use chrono::{NaiveDate, Days};
 
-use crate::{body::{Mass, Velocity, Acceleration, update_bodies}, input::BlockInputPlugin, lagrange::LagrangePoint, skybox::{CubemapMaterial, Skybox}, speed::Speed, fps::Fps, SimState};
+use crate::{body::{Mass, Velocity, Acceleration, update_bodies, Pause}, input::BlockInputPlugin, lagrange::LagrangePoint, skybox::{CubemapMaterial, Skybox}, speed::Speed, fps::Fps, SimState, camera::LockSun};
 
 #[derive(Resource, Inspectable, Default)]
-pub struct SimTime(f32);
+pub struct SimTime(pub f32);
 
 #[derive(Resource, Inspectable, Default)]
 pub struct Light {
@@ -36,9 +36,17 @@ pub fn time_ui(
    mut sim_time: ResMut<SimTime>,
    mut egui_context: ResMut<EguiContext>,
    mut speed: ResMut<Speed>,
-   fps: Res<Fps>
+   fps: Res<Fps>,
+   mut windows: ResMut<Windows>,
+   mut lock_on_sun: ResMut<LockSun>,
+   mut pause: ResMut<Pause>,
+   keys: Res<Input<KeyCode>>,
+   mut state: ResMut<State<SimState>>
 ) {
-    sim_time.0 += time.delta_seconds() * speed.0;
+    let window = windows.primary_mut();
+    if !pause.0 {
+        sim_time.0 += time.delta_seconds() * speed.0;
+    }
     let date = NaiveDate::from_ymd_opt(2022, 11, 25).unwrap().checked_add_days(Days::new(sim_time.0.round() as u64)).unwrap();
     egui::TopBottomPanel::bottom("time_panel")
     .resizable(false)
@@ -47,12 +55,16 @@ pub fn time_ui(
             if ui.small_button("<<").clicked() {
                 speed.0 /= 10.0;
             }
-            if ui.small_button("<").clicked() {
+            if ui.small_button("<").clicked() || keys.just_pressed(KeyCode::Left) {
                 speed.0 /= 2.0;
             }
             let e = if speed.0 == 1.0 {""} else {"e"};
             ui.label(format!("{} ({} Tag{} / s)", date.format("%d.%m.%Y"), speed.0, e));
-            if ui.small_button(">").clicked() {
+            let time_text = if pause.0 { "Pause" } else { "Resume" };
+            if ui.button(time_text).clicked() || keys.just_pressed(KeyCode::Space) {
+                pause.0 = !pause.0;
+            }
+            if ui.small_button(">").clicked() || keys.just_pressed(KeyCode::Right) {
                 speed.0 *= 2.0;
             }
             if ui.small_button(">>").clicked() {
@@ -60,7 +72,23 @@ pub fn time_ui(
             }
         });
         ui.with_layout(egui::Layout::bottom_up(egui::Align::RIGHT), |ui| {
-            ui.label(format!("{:.0} FPS", fps.0));   
+            ui.horizontal(|ui| {
+                if ui.button("Reset").clicked() {
+                    let _ = state.set(SimState::Reset);
+                }
+                ui.checkbox(&mut lock_on_sun.0, "Lock on Sun");
+                let mut vsync = window.present_mode() == PresentMode::AutoVsync;
+                let old_option = vsync;
+                ui.checkbox(&mut vsync, "VSync");
+                if old_option != vsync {
+                    if vsync {
+                        window.set_present_mode(PresentMode::AutoVsync)    
+                    } else {
+                        window.set_present_mode(PresentMode::AutoNoVsync)   
+                    }
+                }
+                ui.label(format!("{:.0} FPS", fps.0));
+            })
         });
     });
 }
@@ -71,7 +99,8 @@ pub fn system_ui(
     mut lagrange_point_query: Query<(&Name, &mut Selection, &mut Visibility, With<LagrangePoint>)>,
     mut skybox: Query<(&mut Visibility, &Skybox, Without<LagrangePoint>, Without<Selection>, Without<Name>)>,
     mut camera: Query<&mut Camera>,
-    mut light: Query<&mut PointLight>
+    mut light: Query<&mut PointLight>,
+    mut state: ResMut<State<SimState>>
 ) {
     let mut points: Vec<(&Name, Mut<Selection>)> = Vec::new();
     let mut selected_body: Option<&str> = None;
@@ -112,6 +141,11 @@ pub fn system_ui(
         if let Ok(mut light) = light.get_single_mut() {
             ui.checkbox(&mut light.shadows_enabled, "Shadows");
         }
+        ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
+            if ui.button("Back to Menu").clicked() {
+                let _ = state.set(SimState::ExitToMainMenu);
+            }    
+        });
     });
     if let Some(selected_name) = selected_body {
         for (name, mut selection) in points {

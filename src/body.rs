@@ -15,10 +15,17 @@ pub const G: f32 = 6.67430e-11_f32; //gravitational constant
 pub struct Gravity(pub f32);
 
 impl Default for Gravity {
+    
     fn default() -> Self {
-        Self(G)
+        const TIME: f32 = 3600.0 * 24.0;
+      
+        Self(G * f32::powf(TIME, 2.0) * 10.0f32.powi(-6) / 1.5f32.powi(3))  
     }
+    
 }
+
+#[derive(Component, Inspectable)]
+pub struct Sun;
 
 #[derive(Default, Component, Inspectable)]
 pub struct Velocity(pub Vec3);
@@ -31,6 +38,9 @@ pub struct Mass(pub f32);
 
 #[derive(Component, Inspectable)]
 pub struct EnableLines(pub bool);
+
+#[derive(Resource, Default)]
+pub struct Pause(pub bool);
 
 impl Default for EnableLines {
     
@@ -80,9 +90,11 @@ impl Plugin for BodyPlugin {
             .register_inspectable::<Gravity>()
             .register_inspectable::<Mass>()
             .register_inspectable::<Velocity>()
+            .register_inspectable::<Sun>()
             .register_inspectable::<Acceleration>()
             .register_inspectable::<BodyBundle>()
             .register_inspectable::<Lines>()
+            .init_resource::<Pause>()
             .add_system_set(SystemSet::on_update(SimState::Simulation).with_system(body_focus.after(orbit_around_l2)))
             .add_system_set(SystemSet::on_update(SimState::Simulation).with_system(update_bodies));
     }
@@ -92,26 +104,29 @@ pub fn update_bodies(
     g: Res<Gravity>,
     mut query: Query<(&Name, &Mass, &mut Transform, &mut Acceleration, &mut Velocity, Without<JWST>)>,
     time: Res<Time>,
-    speed: Res<Speed>
+    speed: Res<Speed>,
+    paused: Res<Pause>
 ) {
-    let mut bodies: Vec<(&Mass, Mut<Transform>, Mut<Acceleration>)> = Vec::new();
-    for (_, mass, transform, mut acc, _, _) in query.iter_mut() {
-        acc.0 = Vec3::ZERO;
-        for (other_mass, other_pos, other_acc) in bodies.iter_mut() {
-            let diff = other_pos.translation - transform.translation;
-            if let Some(mut force) = diff.try_normalize() {
-                let magnitude = g.0 * mass.0 * other_mass.0 / diff.length_squared();
-                force *= magnitude;
-                acc.0 += force;
-                other_acc.0 -= force;
+    if !paused.0 {
+        let mut bodies: Vec<(&Mass, Mut<Transform>, Mut<Acceleration>)> = Vec::new();
+        for (_, mass, transform, mut acc, _, _) in query.iter_mut() {
+            acc.0 = Vec3::ZERO;
+            for (other_mass, other_pos, other_acc) in bodies.iter_mut() {
+                let diff = other_pos.translation - transform.translation;
+                if let Some(mut force) = diff.try_normalize() {
+                    let magnitude = g.0 * mass.0 * other_mass.0 / diff.length_squared();
+                    force *= magnitude;
+                    acc.0 += force;
+                    other_acc.0 -= force;
+                }
             }
+            bodies.push((mass, transform, acc));
         }
-        bodies.push((mass, transform, acc));
-    }
-    for (_m, mass, mut transform, mut acc, mut vel, _) in query.iter_mut() {
-        acc.0 /= mass.0;
-        vel.0 += acc.0 * time.delta_seconds() * speed.0;
-        transform.translation += vel.0 * time.delta_seconds() * speed.0;
+        for (_m, mass, mut transform, mut acc, mut vel, _) in query.iter_mut() {
+            acc.0 /= mass.0;
+            vel.0 += acc.0 * time.delta_seconds() * speed.0;
+            transform.translation += vel.0 * time.delta_seconds() * speed.0;
+        }
     }
 }
 

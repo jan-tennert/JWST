@@ -3,7 +3,7 @@ use bevy::{
     prelude::{
         Component, EventReader, Input, Mat3, MouseButton, Projection, Quat, Query, Res, Transform,
         Vec2, Vec3, App,
-        Plugin, CoreStage, IntoSystemDescriptor, SystemSet
+        Plugin, CoreStage, IntoSystemDescriptor, SystemSet, Resource, ResMut
     },
     window::Windows,
 };
@@ -20,6 +20,9 @@ pub struct PanOrbitCamera {
     pub radius: f32,
     pub upside_down: bool,
 }
+
+#[derive(Resource, Inspectable, Default)]
+pub struct LockSun(pub bool);
 
 impl Default for PanOrbitCamera {
     fn default() -> Self {
@@ -45,6 +48,8 @@ impl Plugin for PanOrbitCameraPlugin {
     fn build(&self, app: &mut App) {
         app
         .register_inspectable::<PanOrbitCamera>()
+        .register_inspectable::<LockSun>()
+        .init_resource::<LockSun>()
         .add_system_set(SystemSet::on_update(SimState::Simulation).with_system(pan_orbit_camera.after(body_focus)));
         //.add_system_to_stage(CoreStage::PostUpdate, pan_orbit_camera);
     }  
@@ -56,7 +61,8 @@ pub fn pan_orbit_camera(
     mut ev_motion: EventReader<MouseMotion>,
     mut ev_scroll: EventReader<MouseWheel>,
     input_mouse: Res<Input<MouseButton>>,
-    mut query: Query<(&mut PanOrbitCamera, &mut Transform, &Projection)>
+    mut query: Query<(&mut PanOrbitCamera, &mut Transform, &Projection)>,
+    mut lock_on_sun: ResMut<LockSun>
 ) {
     // change input mapping for orbit and panning here
     let orbit_button = MouseButton::Right;
@@ -68,6 +74,7 @@ pub fn pan_orbit_camera(
     let mut orbit_button_changed = false;
 
     if input_mouse.pressed(orbit_button) {
+        lock_on_sun.0 = false;
         for ev in ev_motion.iter() {
             rotation_move += ev.delta;
         }
@@ -139,6 +146,10 @@ pub fn pan_orbit_camera(
             let rot_matrix = Mat3::from_quat(transform.rotation);
             transform.translation =
                 pan_orbit.focus + rot_matrix.mul_vec3(Vec3::new(0.0, 0.0, pan_orbit.radius));
+                
+            if lock_on_sun.0 {
+                transform.look_at(Vec3::splat(0.0), Vec3::Y)
+            }    
         }
     }
 }
